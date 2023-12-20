@@ -1,0 +1,61 @@
+package genql
+
+import (
+	"errors"
+	"fmt"
+)
+
+func ValueOf(query *Query, current Map, any any) (any, error) {
+	switch value := any.(type) {
+	case ColumnName:
+		{
+			rs, err := ExecReader(current, string(value))
+			if err != nil {
+				if errors.Is(err, KEY_NOT_FOUND) {
+					return nil, nil
+				}
+				return nil, err
+			}
+			return rs, nil
+		}
+	case NeutalString:
+		{
+			return string(value), nil
+		}
+	case *float64:
+		{
+			return *value, nil
+		}
+	default:
+		{
+			return value, nil
+		}
+	}
+}
+
+func AsType[T any](value any) (*T, error) {
+	test := fmt.Sprintf("%T", *new(T))
+	_ = test
+	returnValue, ok := any(value).(T)
+	if !ok {
+		return new(T), INVALID_CAST
+	}
+	return &returnValue, nil
+}
+
+func AsArray(data any) ([]any, error) {
+	switch data := data.(type) {
+	case []any:
+		{
+			return data, nil
+		}
+	case Map:
+		{
+			return []any{data}, nil
+		}
+	default:
+		{
+			return nil, INVALID_TYPE
+		}
+	}
+}
