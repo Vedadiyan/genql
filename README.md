@@ -316,4 +316,9 @@ Convert ID to string and add a new key:
 - You can convert and select in one query   
 - Arrays must be sliced before selecting value
 
+# 📝 License
+
+Copyright © 2023 [Pouya Vedadiyan](https://github.com/vedadiyan).
+
+This project is [Apache-2.0](./LICENSE) licensed.
 
