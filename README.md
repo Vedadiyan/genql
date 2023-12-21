@@ -1,9 +1,8 @@
 <p align="center">
   <img src="https://github.com/Vedadiyan/genql/blob/master/.github/logo.png" />
 </p>
-<p align="center">
-  A Next Generation Querying Language
-</p>
+
+<h1 align="center">General Querying Language</h1>
 
 # Table of Contents
 - [Introduction](#introduction)
