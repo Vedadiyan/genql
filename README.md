@@ -1,3 +1,5 @@
+[![Go report](https://goreportcard.com/badge/github.com/vedadiyan/genql)](https://goreportcard.com/report/github.com/vedadiyan/genql)
+
 <p align="center">
   <img src="https://github.com/Vedadiyan/genql/blob/master/.github/logo.png" />
 </p>
