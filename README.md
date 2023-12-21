@@ -141,7 +141,7 @@ This strategy runs a function once for all rows rather than each one. The functi
 The GLOBAL strategy broadens function execution scope from only the current row out to the whole object. This allows non-aggregation functions to also operate on the whole object rather than row-by-row.
 
 ## SCOPED Execution
-The SCOPED strategy forces the executor to be scoped to the current row only. Standard SQL functions often process the entire dataset by default. An instance is how SUM calculates the total of a numeric column across all rows initially. However the SCOPED strategy alters the execution scope onlt to data within the current row instead.
+The SCOPED strategy forces the executor to be scoped to the current row only. Standard SQL functions often process the entire dataset by default. An instance is how SUM calculates the total of a numeric column across all rows initially. However the SCOPED strategy alters the execution scope only to data within the current row instead.
 
 ## Default Execution Strategy
 When no strategy is specified, GenQL automatically chooses the SCOPED strategy unless the function is considered by default as an aggregate function in SQL.
