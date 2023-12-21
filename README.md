@@ -64,7 +64,30 @@ Example:
     }
 
 # Basic SQL Syntax Overview
-Structured Query Language (SQL) serves as the common standard for database query languages. SQL allows users to retrieve, manipulate, and transform data stored across various relational database systems. This section provides a high-level reference of basic SQL statements and clauses supported within the GenQL framework. While GenQL specializes in non-relational data, it adopts much of ANSI SQL syntax and capabilities for querying, joining, filtering, and shaping heterogeneous data collections. Familiarity with essential SQL semantics paves the way for effectively composing GenQL queries.
+Structured Query Language (SQL) serves as the common standard for database query languages. SQL allows users to retrieve, manipulate, and transform data stored across various relational database systems. This section provides a high-level reference of basic SQL statements and clauses supported within the GenQL framework. 
+
+- ✅ Subqueries
+- ✅ Select Expressions
+- ❌ Multiple Object Selection (e.g. SELECT FROM obj1, obj2 not supported)
+- ✅ Case When
+- ✅ Aliases
+- ✅ Like Expressions
+- ✅ Functions
+- 🆒 Function Execution Strategies
+- 🆒 Multi-Dimensional Selectors (please refer to the selector language guide)
+- ✅ Limit
+- ✅ Group By
+- ❎ Joins
+    - ✅ Inner, Left, Right Joins
+    - ⭕ Full Outer Join (MySQL limitation)
+    - ❌ Natural Joins (not planned)
+- ⭕ Cross Apply (MySQL limitation)
+- ✅ Unions
+- ✅ CTEs
+- ✅ Having
+- ✅ Order By
+
+While GenQL specializes in non-relational data, it adopts much of ANSI SQL syntax and capabilities for querying, joining, filtering, and shaping heterogeneous data collections. Familiarity with essential SQL semantics paves the way for effectively composing GenQL queries.
 
 
     SELECT
