@@ -1,3 +1,4 @@
+![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.20-%23007d9c)
 [![Go report](https://goreportcard.com/badge/github.com/vedadiyan/genql)](https://goreportcard.com/report/github.com/vedadiyan/genql)
 
 <p align="center">
