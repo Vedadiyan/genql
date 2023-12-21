@@ -1,3 +1,10 @@
+<p align="center">
+  <img src="https://github.com/Vedadiyan/genql/blob/master/.github/logo.png" />
+</p>
+<p align="center">
+  A Next Generation Querying Language
+</p>
+
 # Table of Contents
 - [Introduction](#introduction)
     - [Use Cases](#use-cases)
