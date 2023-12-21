@@ -2,7 +2,10 @@
   <img src="https://github.com/Vedadiyan/genql/blob/master/.github/logo.png" />
 </p>
 
-<h1 align="center">General Querying Language</h1>
+<p align="center">
+  <b align="center">General Querying Language</b>
+</p>
+
 
 # Table of Contents
 - [Introduction](#introduction)
