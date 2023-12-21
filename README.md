@@ -146,7 +146,7 @@ The SCOPED strategy forces the executor to be scoped to the current row only. St
 ## Default Execution Strategy
 When no strategy is specified, GenQL automatically chooses the SCOPED strategy unless the function is considered by default as an aggregate function in SQL.
 
-## Backward Navigation 
+# Backward Navigation 
 GenQL by default scopes the select statement, subqueries, joins, or function calls to the current row. However, if this is not a desired behavior, backward navigation can be used to change the scope of the selection. This can be simply done by using `<-` operator. Each time the `<-` operator is used, the current row is navigated one step backward. 
 
 For example, give the following dataset:
