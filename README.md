@@ -83,6 +83,9 @@ Structured Query Language (SQL) serves as the common standard for database query
         [LIMIT {[offset,] row_count | row_count OFFSET offset}]  -- Optional: Limits the number of returned rows
         [UNION [ALL] select_statement]  -- Optional: Combines results of multiple queries
 
+# Non Columnar Group By 
+The GROUP BY clause in GenQL works in a non columnar way making the `PARTITION` functionality redundant. When a `GROUP BY` is executed by GenQL, alongside normal grouping and including the group keys in the result set, the whole group is also included in the result under which is accessible through the `*` key.
+
 # Common Table Expressions 
 Common Table Expressions (CTEs) are powerful temporary named result sets that enable modularizing complex queries in GenQL. CTEs are materialized subqueries that allow breakdown of multi-layered transformations into simpler building blocks. By assigning result data sets to inline view names, CTEs unlock capabilities like:
 
