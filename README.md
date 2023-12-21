@@ -316,6 +316,21 @@ Convert ID to string and add a new key:
 - You can convert and select in one query   
 - Arrays must be sliced before selecting value
 
+# Contributing
+
+Contributions are welcome! Here are some ways you can contribute to this project:
+
+- Report bugs and make suggestions by opening a new issue. Make sure to provide clear instructions so your issue can be reproduced.
+- Submit pull requests with new features, improvements, or fixes. Make sure to follow the code style of the project and provide unit tests.
+- Improve documentation by submitting pull requests or opening issues when you find anything that's confusing or can be improved.  
+- Help answer questions from other users that come up in issues.
+
+When contributing, please make sure to:
+
+- Keep descriptions clear and simple
+- Follow the code of conduct
+- Give credit to contributors by linking to their profiles/sites
+
 # 📝 License
 
 Copyright © 2023 [Pouya Vedadiyan](https://github.com/vedadiyan).
