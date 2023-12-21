@@ -1,3 +1,36 @@
+# Table of Contents
+- [Introduction](#introduction)
+    - [Use Cases](#use-cases)
+- [Getting Started](#getting-started)
+- [Basic SQL Syntax Overview](#basic-sql-syntax-overview)
+    - [Non Columnar Group By](#non-columnar-group-by)
+    - [Common Table Expressions](#common-table-expressions)
+        - [Direct Selection from CTEs](#direct-selection-from-ctes)
+    - [Function Execution Strategies](#function-execution-strategies)
+        - [ASYNC Execution](#async-execution)
+        - [SPIN Execution](#spin-execution)
+        - [SPINASYNC Execution](#spinasync-execution)
+        - [ONCE Execution](#once-execution)
+        - [GLOBAL Execution](#global-execution)
+        - [SCOPED Execution](#scoped-execution)
+        - [Default Execution Strategy](#default-execution-strategy)
+     - [Backward Navigation](#backward-navigation)
+ - [Selector Language Guide](#selector-language-guide)
+    - [Query Syntax](#query-syntax)
+        - [Get a Key's Value](#get-a-keys-value)
+        - [Get an Array Element](#get-an-array-element)
+        - [Multi-dimensional Arrays](#multi-dimensional-arrays)
+        - [Keep Array Structure](#keep-array-structure)
+        - [Iterate Through Arrays](#interate-through-arrays)
+        - [Array Slices](#array-slices)
+        - [Reshape Data](#reshape-data)
+        - [Escape Keys](#escape-keys)
+        - [Continue With](#continue-with)
+        - [Top Level Functions](#top-level-functions)
+    - [Examples](#examples)
+    - [Tips](#tips)
+    
+
 # Introduction
 In today's data-driven world, navigating diverse data formats and extracting insights can be a complex challenge. GenQL offers a powerful solution by providing a **standardized SQL interface** that abstracts away the complexities of heterogeneous data sources and transformations. By leveraging familiar SQL syntax, GenQL empowers users of all skill levels to efficiently interact with data, regardless of its underlying format. In simple words, it lets you run SQL queries on any data format, join data from different sources, and map the results to a standardized data model.
 
@@ -106,10 +139,10 @@ While GenQL specializes in non-relational data, it adopts much of ANSI SQL synta
         [LIMIT {[offset,] row_count | row_count OFFSET offset}]  -- Optional: Limits the number of returned rows
         [UNION [ALL] select_statement]  -- Optional: Combines results of multiple queries
 
-# Non Columnar Group By 
+## Non Columnar Group By 
 The GROUP BY clause in GenQL works in a non columnar way making the `PARTITION` functionality redundant. When a `GROUP BY` is executed by GenQL, alongside normal grouping and including the group keys in the result set, the whole group is also included in the result under which is accessible through the `*` key.
 
-# Common Table Expressions 
+## Common Table Expressions 
 Common Table Expressions (CTEs) are powerful temporary named result sets that enable modularizing complex queries in GenQL. CTEs are materialized subqueries that allow breakdown of multi-layered transformations into simpler building blocks. By assigning result data sets to inline view names, CTEs unlock capabilities like:
 
  - Query re-use without repetitive subquery definitions
@@ -124,7 +157,7 @@ In effect, CTEs make it possible to reference modular query parts similar to how
         AS (SELECT query) [, cte_name2 AS (SELECT ...)]
     ]
 
-## Direct Selection from CTEs
+### Direct Selection from CTEs
 
 GenQL's SQL dialect provides a specialized shortcut syntax to directly interrogate column elements or dimensions from a Common Table Expression (CTE) result set projection without needing to repeat or re-query the entire CTE.
 
@@ -138,41 +171,41 @@ The key capability this unlocks is to reference any properties or dimensions inc
 This retrieves CTE result data without restating potentially complex underlying queries, joins, or filtering logic. Once a CTE result set is defined, its columns can be explored similarly to a view or table - but only within the enclosing SQL scope.
 
 
-# Function Execution Strategies 
+## Function Execution Strategies 
 GenQL offers different ways to run functions, unlike SQL which focuses on processing columnar data. GenQL handles non-columnar, nested, and multi-dimensional data, making it ideal for dynamic data processing, translation, and transformation. Therefore, the default SQL function execution mechanism doesn't meet GenQL's needs.
 
 GenQL provides six dynamic function execution strategies: ASYNC, SPIN, SPINASYNC, ONCE, GLOBAL, and SCOPED. You can specify these strategies without altering your custom function code. Here's the syntax:
 
     [(ASYNC | SPIN | SPINASYNC | ONCE | GLOBAL | SCOPED)?.functionName([, args])]
 
-## Async Execution
+### Async Execution
 Async execution is ideal for functions with high latency, especially those involving I/O operations. With Async, the query executor continues processing the next rows instead of waiting for the function call to finish. After processing all rows for a query, the query executor awaits all asynchronous function calls to complete. Once an async operation completes, its result instantaneously becomes available in the corresponding row.
 
 As an example, a function that performs caching can be executed asynchronously. By running cache operations or other I/O workloads asynchronously, the query executor does not wait for each function to complete and it continues to the next row. This prevents high latency functions from delaying overall execution. Instead, asynchronous operations proceeds separately while main query logic computes on rows in parallel. This asynchronous approach increases throughput by avoiding having queries blocked waiting on results from long running functions.
 
-## SPIN Execution
+### SPIN Execution
 SPIN allows running a function without blocking the query or returning any result. When the executor encounters a SPIN function, it submits it to a background worker, returns immediately, and doesn't wait for its completion. This means the function call doesn't affect the corresponding row.
 
 For example, a custom function handling logging could be executed in a way not waiting for the logging to finish. This allows continuing with rest of the query rather than waiting for logging completion. Doing logging separately prevents it from reducing speed of the main processing.
 
-## SPINASYNC Execution
+### SPINASYNC Execution
 SPINASYNC is similar to SPIN in that it doesn't return any result, but the executor waits for it to finish when the entire query is processed. This is useful for tasks like inserting data into another database while reading rows.
 
 For example, an insert function can be executed in a non-blocking way. By submitting inserts to a background worker, waits are avoided allowing the executor to continue to the next rows. This prevents any unwanted latency caused by the insert opration slowing down the overall execution. 
 
-## ONCE Execution
+### ONCE Execution
 This strategy runs a function once for all rows rather than each one. The function executes just once and further usages reuse the prior output. This allows including overall analysis without needing to recompute every time. For example, a Statistics function could be leveraged this way, executing once with reuse rather than per row.
 
-## GLOBAL Execution
+### GLOBAL Execution
 The GLOBAL strategy broadens function execution scope from only the current row out to the whole object. This allows non-aggregation functions to also operate on the whole object rather than row-by-row.
 
-## SCOPED Execution
+### SCOPED Execution
 The SCOPED strategy forces the executor to be scoped to the current row only. Standard SQL functions often process the entire dataset by default. An instance is how SUM calculates the total of a numeric column across all rows initially. However the SCOPED strategy alters the execution scope only to data within the current row instead.
 
-## Default Execution Strategy
+### Default Execution Strategy
 When no strategy is specified, GenQL automatically chooses the SCOPED strategy unless the function is considered by default as an aggregate function in SQL.
 
-# Backward Navigation 
+## Backward Navigation 
 GenQL by default scopes the select statement, subqueries, joins, or function calls to the current row. However, if this is not a desired behavior, backward navigation can be used to change the scope of the selection. This can be simply done by using `<-` operator. Each time the `<-` operator is used, the current row is navigated one step backward. 
 
 For example, give the following dataset:
