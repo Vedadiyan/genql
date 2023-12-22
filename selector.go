@@ -84,8 +84,7 @@ func init() {
 	fullPattern = regexp.MustCompile(_FULLPATTERN)
 	arrayPattern = regexp.MustCompile(_ARRAYPATTERN)
 	pipePattern = regexp.MustCompile(_PIPEPATTERN)
-	topLevelFunctions = make(TopLevelFunction)
-	topLevelFunctions["mix"] = Mix
+	RegisterTopLevelFunction("mix", Mix)
 }
 
 func NewIndex[T int | [2]int](value T) *IndexSelector {
@@ -631,4 +630,11 @@ func MixObject(data map[string]any) (map[string]any, error) {
 		mapper[key] = item
 	}
 	return mapper, nil
+}
+
+func RegisterTopLevelFunction(name string, function func(any) (any, error)) {
+	if topLevelFunctions == nil {
+		topLevelFunctions = make(TopLevelFunction)
+	}
+	topLevelFunctions[name] = function
 }

@@ -41,6 +41,7 @@
         - [Escape Keys](#escape-keys)
         - [Continue With](#continue-with)
         - [Top Level Functions](#top-level-functions)
+        - [Custom Top Level Function](#custom-top-level-function)
     - [Examples](#examples)
     - [Tips](#tips)
     
@@ -333,6 +334,17 @@ You can execute one selector and continue with the result.
 Top level functions are extendable and few top level functions are built-in. 
 
 `mix=>data[each].x[each].y`
+
+### Custom Top Level Function
+To define a custom top-level function:
+
+Implement a function with the following signature:
+
+    func(args any)(any, error)
+
+Register with the RegisterTopLevelFunction helper:
+
+    genql.RegisterTopLevelFunction("myFunction", myFunction)
 
 ## Examples        
 
