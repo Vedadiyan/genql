@@ -276,7 +276,7 @@ It is possible to select both user data and and ip address at the same time:
 
     SELECT id, name, `<-root.meta.ip` AS ip FROM `root.users`
 
-The `<-` operator can also be used repeatedly to move to further dimensions like `<-<-root.meta,ip`
+The `<-` operator can also be used repeatedly to move to further dimensions like `<-<-root.meta.ip`
 
 # Selector Language Guide
 
