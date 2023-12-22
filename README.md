@@ -117,7 +117,7 @@ To use the built-in sanitizer:
 
 Then apply the SanitizeSQL function to parameterize queries:
 
-    sanitizedQuery := sanitizer.SanitizeSQL(originalQuery, parameters)
+    sanitizedQuery := sanitizer.SanitizeSQL("SELECT * FROM `root.data.users` WHERE name = $1", 'Pouya')
 
 The SanitizeSQL function escapes query parameters to prevent injection attacks. Using parameterized queries is highly recommended to avoid security issues.
 # Basic SQL Syntax Overview
