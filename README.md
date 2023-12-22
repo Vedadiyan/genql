@@ -17,6 +17,7 @@
     - [Query Sanitization](#query-sanitization)
 - [Basic SQL Syntax Overview](#basic-sql-syntax-overview)
     - [Non Columnar Group By](#non-columnar-group-by)
+    - [Functions](#functions)
     - [Common Table Expressions](#common-table-expressions)
         - [Direct Selection from CTEs](#direct-selection-from-ctes)
     - [Function Execution Strategies](#function-execution-strategies)
