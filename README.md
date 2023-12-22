@@ -167,9 +167,23 @@ While GenQL specializes in non-relational data, it adopts much of ANSI SQL synta
 The GROUP BY clause in GenQL works in a non columnar way making the `PARTITION` functionality redundant. When a `GROUP BY` is executed by GenQL, alongside normal grouping and including the group keys in the result set, the whole group is also included in the result under which is accessible through the `*` key.
 
 ## Functions 
-GenQL supports the definition of custom functions. However, functions must be written in Go and then injected into the executor. In order to define a custom function, a function with the following signature has to be defined and injected into the executor using the `RegisterFunction` helper:
+GenQL allows defining custom functions. Custom functions must be written in Go and registered with the query executor.
+
+To define a custom function:
+
+Implement a function with the following signature:
 
     func(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error)
+
+Register the function using the RegisterFunction helper:
+
+    executor.RegisterFunction("myFunction", myFunction)
+
+The registration makes the function available to GenQL queries under the given name.
+
+The custom function receives the query context, current result row, optional configuration, and query arguments. It returns the result value and any errors.
+
+This allows extending GenQL with domain-specific logic while maintaining security through type-safe APIs. Custom functions have access to the full Go language capabilities.
 
 ## Common Table Expressions 
 Common Table Expressions (CTEs) are powerful temporary named result sets that enable modularizing complex queries in GenQL. CTEs are materialized subqueries that allow breakdown of multi-layered transformations into simpler building blocks. By assigning result data sets to inline view names, CTEs unlock capabilities like:
