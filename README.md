@@ -107,7 +107,18 @@ Example:
         }
         fmt.Printf("%v\r\n", result)
     }
+## Query Sanitization
+GenQL includes a built-in sanitization package extracted from the PGX project. This allows parameterizing queries to avoid vulnerabilities to injection attacks.
 
+To use the built-in sanitizer:
+
+    import "github.com/vedadiyan/genql/sanitizer"
+
+Then apply the SanitizeSQL function to parameterize queries:
+
+    sanitizedQuery := sanitizer.SanitizeSQL(originalQuery, parameters)
+
+The SanitizeSQL function escapes query parameters to prevent injection attacks. Using parameterized queries is highly recommended to avoid security issues.
 # Basic SQL Syntax Overview
 Structured Query Language (SQL) serves as the common standard for database query languages. SQL allows users to retrieve, manipulate, and transform data stored across various relational database systems. This section provides a high-level reference of basic SQL statements and clauses supported within the GenQL framework. 
 
