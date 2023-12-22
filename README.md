@@ -180,7 +180,7 @@ Implement a function with the following signature:
 
 Register the function using the RegisterFunction helper:
 
-    executor.RegisterFunction("myFunction", myFunction)
+    genql.RegisterFunction("myFunction", myFunction)
 
 The registration makes the function available to GenQL queries under the given name.
 
