@@ -1283,7 +1283,7 @@ func FunExpr(query *Query, current Map, expr *sqlparser.FuncExpr) (any, error) {
 				for _, expr := range expr.Exprs {
 					aliasedExpr, ok := expr.(*sqlparser.AliasedExpr)
 					if !ok {
-						return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("failed to build global `FUNCTION`. expected aliased expression but recieved %T", expr))
+						return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("failed to build global `FUNCTION`. expected aliased expression but found %T", expr))
 					}
 					exprs = append(exprs, aliasedExpr.Expr)
 				}
@@ -1345,7 +1345,7 @@ func FuncArgReader(query *Query, current Map, selectExprs sqlparser.SelectExprs)
 	for _, expr := range selectExprs {
 		aliasedExpr, ok := expr.(*sqlparser.AliasedExpr)
 		if !ok {
-			return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("failed to build `FUNCTION ARGUMENT`. expected aliased expression but recieved %T", expr))
+			return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("failed to build `FUNCTION ARGUMENT`. expected aliased expression but found %T", expr))
 		}
 		exprs = append(exprs, aliasedExpr.Expr)
 	}
