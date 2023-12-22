@@ -14,6 +14,7 @@
 - [Introduction](#introduction)
     - [Use Cases](#use-cases)
 - [Getting Started](#getting-started)
+    - [Query Sanitization](#query-sanitization)
 - [Basic SQL Syntax Overview](#basic-sql-syntax-overview)
     - [Non Columnar Group By](#non-columnar-group-by)
     - [Common Table Expressions](#common-table-expressions)
