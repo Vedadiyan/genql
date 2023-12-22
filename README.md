@@ -164,7 +164,9 @@ While GenQL specializes in non-relational data, it adopts much of ANSI SQL synta
         [UNION [ALL] select_statement]  -- Optional: Combines results of multiple queries
 
 ## Non Columnar Group By 
-The GROUP BY clause in GenQL works in a non columnar way making the `PARTITION` functionality redundant. When a `GROUP BY` is executed by GenQL, alongside normal grouping and including the group keys in the result set, the whole group is also included in the result under which is accessible through the `*` key.
+The GROUP BY clause in GenQL does not operate column-wise. Instead, it groups full result rows. This makes the SQL PARTITION BY functionality redundant.
+
+When a GROUP BY executes in GenQL, in addition to normal grouping and including the group keys in the result set, it also includes the full group data under the * key:
 
 ## Functions 
 GenQL allows defining custom functions. Custom functions must be written in Go and registered with the query executor.
