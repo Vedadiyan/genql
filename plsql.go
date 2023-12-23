@@ -1489,7 +1489,6 @@ func ExecSelect(query *Query, current []any) ([]any, error) {
 			}
 		case Map:
 			{
-				current["<-"] = query.data
 				rs, err := SelectExpr(query, current, &query.selectDefinition)
 				if err != nil {
 					return nil, err
