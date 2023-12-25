@@ -1405,7 +1405,7 @@ func AggrFuncArgReader(query *Query, current Map, exprs sqlparser.Exprs) ([]any,
 	return slice, nil
 }
 
-func (query *Query) ExecWhere(current Map) (bool, error) {
+func ExecWhere(query *Query, current Map) (bool, error) {
 	if query.whereDefinition != nil {
 		rs, err := Expr(query, current, query.whereDefinition.Expr, nil)
 		if err != nil {
@@ -1462,7 +1462,7 @@ func ExecGroupBy(query *Query, current []any) ([]any, error) {
 			current[innerKey] = innerValue
 		}
 		current["*"] = item
-		rs, err := query.ExecHaving(current)
+		rs, err := ExecHaving(query, current)
 		if err != nil {
 			return nil, err
 		}
@@ -1473,7 +1473,7 @@ func ExecGroupBy(query *Query, current []any) ([]any, error) {
 	return slice, nil
 }
 
-func (query *Query) ExecHaving(current Map) (bool, error) {
+func ExecHaving(query *Query, current Map) (bool, error) {
 	if query.havingDefinition != nil {
 		rs, err := Expr(query, current, query.havingDefinition.Expr, nil)
 		if err != nil {
@@ -1570,7 +1570,7 @@ func (query *Query) Exec() (result any, err error) {
 			}
 		case Map:
 			{
-				isMatch, err := query.ExecWhere(current)
+				isMatch, err := ExecWhere(query, current)
 				if err != nil {
 					return nil, err
 				}
