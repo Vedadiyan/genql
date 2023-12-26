@@ -39,6 +39,7 @@ type (
 	NeutalString     string
 	ColumnName       string
 	Ommit            bool
+	Fuse             map[string]any
 
 	FunctionOptions struct {
 	}

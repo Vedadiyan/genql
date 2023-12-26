@@ -189,6 +189,56 @@ func FirstFunc(query *Query, current Map, functionOptions *FunctionOptions, args
 	return nil, nil
 }
 
+//	Gets the last item of an array and returns nil if the array is empty
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |    []any   |     can be any array      |
+// --------------------------------------------------
+func LastFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(1, args)
+	if err != nil {
+		return nil, err
+	}
+	slice, err := AsType[[]any](args[0])
+	if err != nil {
+		return nil, err
+	}
+	len := len(*slice)
+	if len > 0 {
+		return (*slice)[len-1], nil
+	}
+	return nil, nil
+}
+
+//	Gets the given index of an array and returns nil if the array is empty
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |    []any   |     can be any array      |
+// |   1   |     int    |       given index         |
+// --------------------------------------------------
+func IndexFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(2, args)
+	if err != nil {
+		return nil, err
+	}
+	slice, err := AsType[[]any](args[0])
+	if err != nil {
+		return nil, err
+	}
+	index, err := AsType[int](args[1])
+	if err != nil {
+		return nil, err
+	}
+	if len(*slice) > *index {
+		return (*slice)[*index], nil
+	}
+	return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("index %d is out of range", *index))
+}
+
 //	Gets the value of the only key available in an object and returns an error if multiple
 //	keys are found
 //
@@ -287,7 +337,7 @@ func UnwindFunc(query *Query, current Map, functionOptions *FunctionOptions, arg
 	return output, nil
 }
 
-//	Flattens an array by one dimension
+//	If condition
 //
 // --------------------------------------------------
 // | index |    type    |       description         |
@@ -317,6 +367,34 @@ func IfFunc(query *Query, current Map, functionOptions *FunctionOptions, args []
 		return *whenTrue, nil
 	}
 	return *whenFalse, nil
+}
+
+//	If condition
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |     any    |    result to be fused     |
+// --------------------------------------------------
+func FuseFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(1, args)
+	if err != nil {
+		return nil, err
+	}
+	rs, err := AsType[any](args[0])
+	if err != nil {
+		return nil, err
+	}
+	switch rs := (*rs).(type) {
+	case map[string]any:
+		{
+			return Fuse(rs), nil
+		}
+	default:
+		{
+			return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("fuse cannot be used with %T type", rs))
+		}
+	}
 }
 
 func Guard(n int, args []any) error {
@@ -359,8 +437,11 @@ func init() {
 	RegisterFunction("count", CountFunc)
 	RegisterFunction("concat", ConcatFunc)
 	RegisterFunction("first", FirstFunc)
+	RegisterFunction("last", LastFunc)
+	RegisterFunction("index", IndexFunc)
 	RegisterFunction("defaultkey", DefaultKeyFunc)
 	RegisterFunction("convert", ConvertFunc)
 	RegisterFunction("unwind", UnwindFunc)
 	RegisterFunction("if", IfFunc)
+	RegisterFunction("fuse", FuseFunc)
 }
