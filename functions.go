@@ -220,7 +220,7 @@ func LastFunc(query *Query, current Map, functionOptions *FunctionOptions, args 
 // |   0   |    []any   |     can be any array      |
 // |   1   |     int    |       given index         |
 // --------------------------------------------------
-func IndexFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+func ElementAtFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
 	err := Guard(2, args)
 	if err != nil {
 		return nil, err
@@ -438,7 +438,7 @@ func init() {
 	RegisterFunction("concat", ConcatFunc)
 	RegisterFunction("first", FirstFunc)
 	RegisterFunction("last", LastFunc)
-	RegisterFunction("index", IndexFunc)
+	RegisterFunction("elementat", ElementAtFunc)
 	RegisterFunction("defaultkey", DefaultKeyFunc)
 	RegisterFunction("convert", ConvertFunc)
 	RegisterFunction("unwind", UnwindFunc)

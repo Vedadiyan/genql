@@ -280,7 +280,7 @@ GenQL comes with a number of built-in functions for performing common data trans
 | CONCAT | Concatenates strings | CONCAT(expr1, expr2, ...) | No |
 | FIRST | Returns the first value in a series | FIRST(expr) | No |
 | LAST | Returns the last value in a series | LAST(expr) | No |   
-| INDEX | Returns the value at a specified index in a series | INDEX(expr, index) | No |
+| ELEMENTAT | Returns the value at a specified index in a series | ELEMENTAT(expr, index) | No |
 | DEFAULTKEY | Returns a the only key in a select statement | DEFAULTKEY(expr) | No |
 | CONVERT | Converts a value to a specified type | CONVERT(expr, type) | No |
 | UNWIND | Expands an array into a series of values | UNWIND(expr) | No | 
