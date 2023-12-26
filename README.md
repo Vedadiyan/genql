@@ -270,22 +270,22 @@ Register the function using the RegisterImmediateFunction helper:
 ## Built-In Functions 
 GenQL comes with a number of built-in functions for performing common data transformations and analysis. At the same time, it allows users to extend its capabilities by defining their own custom functions.
 
-| Function Name | Description | Is Immediate |
-| ------------- |-------------| -----|
-| SUM | Returns the sum of the values in a series | No |
-| AVG | Returns the average of the values in a series | No |  
-| MIN | Returns the minimum value in a series | No |
-| MAX | Returns the maximum value in a series | No |
-| COUNT | Returns the number of values in a series | No |
-| CONCAT | Concatenates strings | No |
-| FIRST | Returns the first value in a series | No |
-| LAST | Returns the last value in a series | No |   
-| INDEX | Returns the value at a specified index in a series | No |
-| DEFAULTKEY | Returns a the only key in a select statement | No |
-| CONVERT | Converts a value to a specified type | No |
-| UNWIND | Expands an array into a series of values | No | 
-| IF | Returns one value if a condition is true, and another if false | No |
-| FUSE | Fuses a series of values into the current row | Yes |
+| Function Name | Description | Signature | Is Immediate |
+| ------------- |-------------| --------- | -----|
+| SUM | Returns the sum of the values in a series | SUM(expr) | No |
+| AVG | Returns the average of the values in a series | AVG(expr) | No |  
+| MIN | Returns the minimum value in a series | MIN(expr) | No |
+| MAX | Returns the maximum value in a series | MAX(expr) | No |
+| COUNT | Returns the number of values in a series | COUNT(expr)  | No |
+| CONCAT | Concatenates strings | CONCAT(expr1, expr2, ...) | No |
+| FIRST | Returns the first value in a series | FIRST(expr) | No |
+| LAST | Returns the last value in a series | LAST(expr) | No |   
+| INDEX | Returns the value at a specified index in a series | INDEX(expr, index) | No |
+| DEFAULTKEY | Returns a the only key in a select statement | DEFAULTKEY(expr) | No |
+| CONVERT | Converts a value to a specified type | CONVERT(expr, type) | No |
+| UNWIND | Expands an array into a series of values | UNWIND(expr) | No | 
+| IF | Returns one value if a condition is true, and another if false | IF(cond, is_true, else) | No |
+| FUSE | Fuses a series of values into the current row | FUSE(expr) | Yes |
 
 ## Backward Navigation 
 GenQL by default scopes the subqueries and 'where exists' clauses to the current row that is being processed. However, if this is not a desired behavior, backward navigation can be used to change the scope of the selection. This can be simply done by using `<-` operator. Each time the `<-` operator is used, the current row is navigated one step backward. 
