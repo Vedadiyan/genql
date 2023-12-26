@@ -229,14 +229,15 @@ func ElementAtFunc(query *Query, current Map, functionOptions *FunctionOptions, 
 	if err != nil {
 		return nil, err
 	}
-	index, err := AsType[int](args[1])
+	indexRaw, err := AsType[float64](args[1])
 	if err != nil {
 		return nil, err
 	}
-	if len(*slice) > *index {
-		return (*slice)[*index], nil
+	index := int(*indexRaw)
+	if len(*slice) > index {
+		return (*slice)[index], nil
 	}
-	return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("index %d is out of range", *index))
+	return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("index %d is out of range", index))
 }
 
 //	Gets the value of the only key available in an object and returns an error if multiple
