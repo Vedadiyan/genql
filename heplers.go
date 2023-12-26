@@ -74,8 +74,8 @@ func AsArray(data any) ([]any, error) {
 	}
 }
 
-func IsEagerFunction(name string) bool {
-	for _, value := range eagerFunctions {
+func IsImmidiateFunction(name string) bool {
+	for _, value := range immidiateFunctions {
 		if strings.ToLower(name) == value {
 			return true
 		}

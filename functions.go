@@ -443,5 +443,5 @@ func init() {
 	RegisterFunction("convert", ConvertFunc)
 	RegisterFunction("unwind", UnwindFunc)
 	RegisterFunction("if", IfFunc)
-	RegisterEagerFunction("fuse", FuseFunc)
+	RegisterImmidiateFunction("fuse", FuseFunc)
 }
