@@ -74,8 +74,8 @@ func AsArray(data any) ([]any, error) {
 	}
 }
 
-func IsImmidiateFunction(name string) bool {
-	for _, value := range immidiateFunctions {
+func IsImmediateFunction(name string) bool {
+	for _, value := range immediateFunctions {
 		if strings.ToLower(name) == value {
 			return true
 		}

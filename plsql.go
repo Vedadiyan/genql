@@ -76,7 +76,7 @@ type (
 
 var (
 	functions          map[string]Function
-	immidiateFunctions []string
+	immediateFunctions []string
 )
 
 func Wrapped() QueryOption {
@@ -1246,12 +1246,12 @@ func FunExpr(query *Query, current Map, expr *sqlparser.FuncExpr) (any, error) {
 		return nil, INVALID_FUNCTION.Extend(fmt.Sprintf("function %s cannot be found", expr.Name.String()))
 	}
 	execType := strings.ToLower(expr.Qualifier.String())
-	isImmidiate := IsImmidiateFunction(name)
+	isimmediate := IsImmediateFunction(name)
 	switch execType {
 	case "async":
 		{
-			if isImmidiate {
-				return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("%s is an immidiate function and it cannot be run asynchronously", name))
+			if isimmediate {
+				return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("%s is an immediate function and it cannot be run asynchronously", name))
 			}
 			slice, e := FuncArgReader(query, current, expr.Exprs)
 			if e != nil {
@@ -1268,8 +1268,8 @@ func FunExpr(query *Query, current Map, expr *sqlparser.FuncExpr) (any, error) {
 		}
 	case "spin":
 		{
-			if isImmidiate {
-				return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("%s is an immidiate function and it cannot be spinned", name))
+			if isimmediate {
+				return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("%s is an immediate function and it cannot be spinned", name))
 			}
 			slice, e := FuncArgReader(query, current, expr.Exprs)
 			if e != nil {
@@ -1282,8 +1282,8 @@ func FunExpr(query *Query, current Map, expr *sqlparser.FuncExpr) (any, error) {
 		}
 	case "spinasync":
 		{
-			if isImmidiate {
-				return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("%s is an immidiate function and it cannot be spinned asynchronously", name))
+			if isimmediate {
+				return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("%s is an immediate function and it cannot be spinned asynchronously", name))
 			}
 			slice, e := FuncArgReader(query, current, expr.Exprs)
 			if e != nil {
@@ -1651,13 +1651,13 @@ func RegexComparison(left any, pattern string) (bool, error) {
 func RegisterFunction(name string, function Function) {
 	if functions == nil {
 		functions = make(map[string]Function)
-		immidiateFunctions = make([]string, 0)
+		immediateFunctions = make([]string, 0)
 	}
 	functions[strings.ToLower(name)] = function
 }
-func RegisterImmidiateFunction(name string, function Function) {
+func RegisterImmediateFunction(name string, function Function) {
 	RegisterFunction(name, function)
-	immidiateFunctions = append(immidiateFunctions, strings.ToLower(name))
+	immediateFunctions = append(immediateFunctions, strings.ToLower(name))
 }
 
 func CopyQuery(query *Query) *Query {
