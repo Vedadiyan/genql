@@ -255,7 +255,7 @@ The SCOPED strategy forces the executor to be scoped to the current row only. St
 When no strategy is specified, GenQL automatically chooses the SCOPED strategy unless the function is considered by default as an aggregate function in SQL.
 
 ## Immediate Functions
-An immediate functions is a function whose execution type cannot be overriden as it is meant to run and return immediately. 
+An immediate functions is a function whose execution type cannot be overriden to ASYNC, SPIN, or SPINASYNC as it is meant to run and return immediately. 
 
 To define a custom immediate function:
 
