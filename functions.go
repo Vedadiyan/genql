@@ -430,11 +430,11 @@ func ToInt(any any) (int, error) {
 }
 
 func init() {
-	RegisterFunction("sum", SumFunc)
-	RegisterFunction("avg", AvgFunc)
-	RegisterFunction("min", MinFunc)
-	RegisterFunction("max", MaxFunc)
-	RegisterFunction("count", CountFunc)
+	RegisterImmediateFunction("sum", SumFunc)
+	RegisterImmediateFunction("avg", AvgFunc)
+	RegisterImmediateFunction("min", MinFunc)
+	RegisterImmediateFunction("max", MaxFunc)
+	RegisterImmediateFunction("count", CountFunc)
 	RegisterFunction("concat", ConcatFunc)
 	RegisterFunction("first", FirstFunc)
 	RegisterFunction("last", LastFunc)

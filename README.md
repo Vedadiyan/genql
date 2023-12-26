@@ -272,11 +272,11 @@ GenQL comes with a number of built-in functions for performing common data trans
 
 | Function Name | Description | Signature | Is Immediate |
 | ------------- |-------------| --------- | -----|
-| SUM | Returns the sum of the values in a series | SUM(expr) | No |
-| AVG | Returns the average of the values in a series | AVG(expr) | No |  
-| MIN | Returns the minimum value in a series | MIN(expr) | No |
-| MAX | Returns the maximum value in a series | MAX(expr) | No |
-| COUNT | Returns the number of values in a series | COUNT(expr)  | No |
+| SUM | Returns the sum of the values in a series | SUM(expr) | Yes |
+| AVG | Returns the average of the values in a series | AVG(expr) | Yes |  
+| MIN | Returns the minimum value in a series | MIN(expr) | Yes |
+| MAX | Returns the maximum value in a series | MAX(expr) | Yes |
+| COUNT | Returns the number of values in a series | COUNT(expr)  | Yes |
 | CONCAT | Concatenates strings | CONCAT(expr1, expr2, ...) | No |
 | FIRST | Returns the first value in a series | FIRST(expr) | No |
 | LAST | Returns the last value in a series | LAST(expr) | No |   
