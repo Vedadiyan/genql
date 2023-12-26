@@ -28,6 +28,7 @@
         - [GLOBAL Execution](#global-execution)
         - [SCOPED Execution](#scoped-execution)
         - [Default Execution Strategy](#default-execution-strategy)
+    - [Immediate Functions](#immediate-functions)
      - [Backward Navigation](#backward-navigation)
  - [Selector Language Guide](#selector-language-guide)
     - [Query Syntax](#query-syntax)
@@ -251,6 +252,19 @@ The SCOPED strategy forces the executor to be scoped to the current row only. St
 
 ### Default Execution Strategy
 When no strategy is specified, GenQL automatically chooses the SCOPED strategy unless the function is considered by default as an aggregate function in SQL.
+
+## Immediate Functions
+An immediate functions is a function whose execution type cannot be overriden as it is meant to run and return immediately. 
+
+To define a custom immediate function:
+
+Implement a function with the following signature:
+
+    func(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error)
+
+Register the function using the RegisterImmediateFunction helper:
+
+    genql.RegisterImmediateFunction("myFunction", myFunction)
 
 ## Backward Navigation 
 GenQL by default scopes the subqueries and 'where exists' clauses to the current row that is being processed. However, if this is not a desired behavior, backward navigation can be used to change the scope of the selection. This can be simply done by using `<-` operator. Each time the `<-` operator is used, the current row is navigated one step backward. 
