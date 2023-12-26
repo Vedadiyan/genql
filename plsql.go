@@ -1159,6 +1159,8 @@ func SelectExpr(query *Query, current Map, expr *sqlparser.SelectExprs) (Map, er
 				if err != nil {
 					return nil, err
 				}
+				// Fuse blends all the keys to the current row
+				// Fuse types only come from the FuseFunc function
 				if fuse, ok := valueRaw.(Fuse); ok {
 					prefix := expr.As.String()
 					for key, value := range fuse {
