@@ -39,6 +39,7 @@ type (
 	NeutalString     string
 	ColumnName       string
 	Ommit            bool
+	Fuse             map[string]any
 
 	FunctionOptions struct {
 	}
@@ -74,7 +75,8 @@ type (
 )
 
 var (
-	functions map[string]Function
+	functions          map[string]Function
+	immediateFunctions []string
 )
 
 func Wrapped() QueryOption {
@@ -1158,6 +1160,19 @@ func SelectExpr(query *Query, current Map, expr *sqlparser.SelectExprs) (Map, er
 				if err != nil {
 					return nil, err
 				}
+				// Fuse blends all the keys to the current row
+				// Fuse types only come from the FuseFunc function
+				if fuse, ok := valueRaw.(Fuse); ok {
+					prefix := expr.As.String()
+					for key, value := range fuse {
+						if len(prefix) > 0 {
+							data[fmt.Sprintf("%s.%s", prefix, key)] = value
+							continue
+						}
+						data[key] = value
+					}
+					continue
+				}
 				if len(expr.As.String()) > 0 {
 					data[expr.As.String()] = valueRaw
 					continue
@@ -1225,13 +1240,19 @@ func ExistExpr(query *Query, current Map, expr *sqlparser.ExistsExpr) (bool, err
 }
 
 func FunExpr(query *Query, current Map, expr *sqlparser.FuncExpr) (any, error) {
+	name := expr.Name.Lowered()
 	function, ok := functions[expr.Name.Lowered()]
 	if !ok {
 		return nil, INVALID_FUNCTION.Extend(fmt.Sprintf("function %s cannot be found", expr.Name.String()))
 	}
-	switch strings.ToLower(expr.Qualifier.String()) {
+	execType := strings.ToLower(expr.Qualifier.String())
+	isimmediate := IsImmediateFunction(name)
+	switch execType {
 	case "async":
 		{
+			if isimmediate {
+				return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("%s is an immediate function and it cannot be run asynchronously", name))
+			}
 			slice, e := FuncArgReader(query, current, expr.Exprs)
 			if e != nil {
 				return nil, e
@@ -1247,6 +1268,9 @@ func FunExpr(query *Query, current Map, expr *sqlparser.FuncExpr) (any, error) {
 		}
 	case "spin":
 		{
+			if isimmediate {
+				return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("%s is an immediate function and it cannot be spinned", name))
+			}
 			slice, e := FuncArgReader(query, current, expr.Exprs)
 			if e != nil {
 				return nil, e
@@ -1258,6 +1282,9 @@ func FunExpr(query *Query, current Map, expr *sqlparser.FuncExpr) (any, error) {
 		}
 	case "spinasync":
 		{
+			if isimmediate {
+				return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("%s is an immediate function and it cannot be spinned asynchronously", name))
+			}
 			slice, e := FuncArgReader(query, current, expr.Exprs)
 			if e != nil {
 				return nil, e
@@ -1624,8 +1651,13 @@ func RegexComparison(left any, pattern string) (bool, error) {
 func RegisterFunction(name string, function Function) {
 	if functions == nil {
 		functions = make(map[string]Function)
+		immediateFunctions = make([]string, 0)
 	}
 	functions[strings.ToLower(name)] = function
+}
+func RegisterImmediateFunction(name string, function Function) {
+	RegisterFunction(name, function)
+	immediateFunctions = append(immediateFunctions, strings.ToLower(name))
 }
 
 func CopyQuery(query *Query) *Query {

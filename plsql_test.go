@@ -300,3 +300,9 @@ func TestRightJoin(t *testing.T) {
 	cmd := `SELECT A.name AS A_name, B.name AS B_name FROM "mix=>root.data.likes" A RIGHT JOIN "mix=>root.data.technologies" B on A.name = B.name`
 	Tester(cmd, expected, t)
 }
+
+func TestFuse(t *testing.T) {
+	expected := "[map[id:1 test.hair:black test.height:170] map[id:2 test.hair:blond test.height:180]]"
+	cmd := `SELECT id, FUSE(profile) AS test FROM "root.data"`
+	Tester(cmd, expected, t)
+}
