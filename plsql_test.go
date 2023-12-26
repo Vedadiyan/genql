@@ -303,6 +303,6 @@ func TestRightJoin(t *testing.T) {
 
 func TestFuse(t *testing.T) {
 	expected := "[map[hair:black height:170 id:1] map[hair:blond height:180 id:2]]"
-	cmd := `SELECT id, FUSE(FIRST((SELECT * FROM profile))) FROM "root.data"`
+	cmd := `SELECT id, ASYNC.FUSE(profile) FROM "root.data"`
 	Tester(cmd, expected, t)
 }

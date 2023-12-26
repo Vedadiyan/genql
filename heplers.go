@@ -16,6 +16,7 @@ package genql
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 func ValueOf(query *Query, current Map, any any) (any, error) {
@@ -71,4 +72,13 @@ func AsArray(data any) ([]any, error) {
 			return nil, INVALID_TYPE
 		}
 	}
+}
+
+func IsEagerFunction(name string) bool {
+	for _, value := range eagerFunctions {
+		if strings.ToLower(name) == value {
+			return true
+		}
+	}
+	return false
 }

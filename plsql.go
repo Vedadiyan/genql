@@ -75,7 +75,8 @@ type (
 )
 
 var (
-	functions map[string]Function
+	functions      map[string]Function
+	eagerFunctions []string
 )
 
 func Wrapped() QueryOption {
@@ -1239,11 +1240,18 @@ func ExistExpr(query *Query, current Map, expr *sqlparser.ExistsExpr) (bool, err
 }
 
 func FunExpr(query *Query, current Map, expr *sqlparser.FuncExpr) (any, error) {
+	name := expr.Name.Lowered()
 	function, ok := functions[expr.Name.Lowered()]
 	if !ok {
 		return nil, INVALID_FUNCTION.Extend(fmt.Sprintf("function %s cannot be found", expr.Name.String()))
 	}
-	switch strings.ToLower(expr.Qualifier.String()) {
+	execType := strings.ToLower(expr.Qualifier.String())
+	if IsEagerFunction(name) {
+		if len(execType) != 0 {
+			return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("%s is an eager function which means it's execution behavior cannot be overriden", name))
+		}
+	}
+	switch execType {
 	case "async":
 		{
 			slice, e := FuncArgReader(query, current, expr.Exprs)
@@ -1638,8 +1646,13 @@ func RegexComparison(left any, pattern string) (bool, error) {
 func RegisterFunction(name string, function Function) {
 	if functions == nil {
 		functions = make(map[string]Function)
+		eagerFunctions = make([]string, 0)
 	}
 	functions[strings.ToLower(name)] = function
+}
+func RegisterEagerFunction(name string, function Function) {
+	RegisterFunction(name, function)
+	eagerFunctions = append(eagerFunctions, strings.ToLower(name))
 }
 
 func CopyQuery(query *Query) *Query {
