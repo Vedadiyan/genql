@@ -28,7 +28,8 @@
         - [GLOBAL Execution](#global-execution)
         - [SCOPED Execution](#scoped-execution)
         - [Default Execution Strategy](#default-execution-strategy)
-    - [Immediate Functions](#immediate-functions)
+     - [Immediate Functions](#immediate-functions)
+     - [Built-In Functions](#built-in-functions)
      - [Backward Navigation](#backward-navigation)
  - [Selector Language Guide](#selector-language-guide)
     - [Query Syntax](#query-syntax)
@@ -265,6 +266,26 @@ Implement a function with the following signature:
 Register the function using the RegisterImmediateFunction helper:
 
     genql.RegisterImmediateFunction("myFunction", myFunction)
+
+## Built-In Functions 
+GenQL comes with a number of built-in functions for performing common data transformations and analysis. At the same time, it allows users to extend its capabilities by defining their own custom functions.
+
+| Function Name | Description | Is Immediate |
+| ------------- |-------------| -----|
+| SUM | Returns the sum of the values in a series | No |
+| AVG | Returns the average of the values in a series | No |  
+| MIN | Returns the minimum value in a series | No |
+| MAX | Returns the maximum value in a series | No |
+| COUNT | Returns the number of values in a series | No |
+| CONCAT | Concatenates strings | No |
+| FIRST | Returns the first value in a series | No |
+| LAST | Returns the last value in a series | No |   
+| INDEX | Returns the value at a specified index in a series | No |
+| DEFAULTKEY | Returns a the only key in a select statement | No |
+| CONVERT | Converts a value to a specified type | No |
+| UNWIND | Expands an array into a series of values | No | 
+| IF | Returns one value if a condition is true, and another if false | No |
+| FUSE | Fuses a series of values into the current row | Yes |
 
 ## Backward Navigation 
 GenQL by default scopes the subqueries and 'where exists' clauses to the current row that is being processed. However, if this is not a desired behavior, backward navigation can be used to change the scope of the selection. This can be simply done by using `<-` operator. Each time the `<-` operator is used, the current row is navigated one step backward. 
