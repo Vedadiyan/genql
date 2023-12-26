@@ -1159,6 +1159,17 @@ func SelectExpr(query *Query, current Map, expr *sqlparser.SelectExprs) (Map, er
 				if err != nil {
 					return nil, err
 				}
+				if fuse, ok := valueRaw.(Fuse); ok {
+					prefix := expr.As.String()
+					for key, value := range fuse {
+						if len(prefix) > 0 {
+							data[fmt.Sprintf("%s.%s", prefix, key)] = value
+							continue
+						}
+						data[key] = value
+					}
+					continue
+				}
 				if len(expr.As.String()) > 0 {
 					data[expr.As.String()] = valueRaw
 					continue
