@@ -66,6 +66,7 @@ type (
 		orderByDefinition   OrderByDefinition
 		wg                  sync.WaitGroup
 		singletonExecutions map[string]any
+		postProcessors      []func() error
 		options             struct {
 			wrapped                 bool
 			postgresEscapingDialect bool
@@ -104,6 +105,7 @@ func New(data Map, query string, options ...QueryOption) (*Query, error) {
 		groupDefinition:     make(GroupDefinition),
 		orderByDefinition:   make(OrderByDefinition, 0),
 		singletonExecutions: make(map[string]any),
+		postProcessors:      make([]func() error, 0),
 	}
 	for _, option := range options {
 		option(q)
@@ -143,6 +145,7 @@ func Prepare(data Map, statement sqlparser.Statement, options ...QueryOption) (*
 		groupDefinition:     make(GroupDefinition),
 		orderByDefinition:   make(OrderByDefinition, 0),
 		singletonExecutions: map[string]any{},
+		postProcessors:      make([]func() error, 0),
 	}
 	for _, option := range options {
 		option(q)
@@ -503,6 +506,7 @@ func BuilFromAliasedTable(query *Query, as string, expr sqlparser.SimpleTableExp
 						query.from = array
 						return nil
 					}
+					return nil
 				}
 			}
 			return INVALID_TYPE.Extend(fmt.Sprintf("failed to build `ALIAS` expression. did not expect %T", data))
@@ -1173,11 +1177,22 @@ func SelectExpr(query *Query, current Map, expr *sqlparser.SelectExprs) (Map, er
 					}
 					continue
 				}
+				name := expr.ColumnName()
 				if len(expr.As.String()) > 0 {
-					data[expr.As.String()] = valueRaw
-					continue
+					name = expr.As.String()
 				}
-				data[expr.ColumnName()] = valueRaw
+				// Async functions return pointers
+				// It's a good idea to convert them back to value types
+				if valueRaw, ok := valueRaw.(*any); ok {
+					query.postProcessors = append(query.postProcessors, func() error {
+						if err != nil {
+							return err
+						}
+						data[name] = *valueRaw
+						return nil
+					})
+				}
+				data[name] = valueRaw
 			}
 		}
 	}
@@ -1638,6 +1653,9 @@ func (query *Query) Exec() (result any, err error) {
 		query.options.completed()
 	}
 	query.wg.Wait()
+	for _, postProcessor := range query.postProcessors {
+		postProcessor()
+	}
 	return rs, nil
 }
 
@@ -1672,5 +1690,6 @@ func CopyQuery(query *Query) *Query {
 		offsetDefinition:  query.offsetDefinition,
 		orderByDefinition: query.orderByDefinition,
 		options:           query.options,
+		postProcessors:    query.postProcessors,
 	}
 }
