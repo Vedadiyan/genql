@@ -711,6 +711,8 @@ func OrExpr(query *Query, current Map, expr *sqlparser.OrExpr) (bool, error) {
 }
 
 func ComparisonExpr(query *Query, current Map, expr *sqlparser.ComparisonExpr) (bool, error) {
+	current["<-"] = query.data
+	defer delete(current, "<-")
 	left, err := Expr(query, current, expr.Left, nil)
 	if err != nil {
 		return false, err
