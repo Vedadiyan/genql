@@ -179,6 +179,9 @@ func FirstFunc(query *Query, current Map, functionOptions *FunctionOptions, args
 	if err != nil {
 		return nil, err
 	}
+	if args[0] == nil {
+		return nil, nil
+	}
 	slice, err := AsType[[]any](args[0])
 	if err != nil {
 		return nil, err
@@ -200,6 +203,9 @@ func LastFunc(query *Query, current Map, functionOptions *FunctionOptions, args 
 	err := Guard(1, args)
 	if err != nil {
 		return nil, err
+	}
+	if args[0] == nil {
+		return nil, nil
 	}
 	slice, err := AsType[[]any](args[0])
 	if err != nil {
@@ -224,6 +230,9 @@ func ElementAtFunc(query *Query, current Map, functionOptions *FunctionOptions, 
 	err := Guard(2, args)
 	if err != nil {
 		return nil, err
+	}
+	if args[0] == nil {
+		return nil, nil
 	}
 	slice, err := AsType[[]any](args[0])
 	if err != nil {
@@ -252,6 +261,9 @@ func DefaultKeyFunc(query *Query, current Map, functionOptions *FunctionOptions,
 	err := Guard(1, args)
 	if err != nil {
 		return nil, err
+	}
+	if args[0] == nil {
+		return nil, nil
 	}
 	obj, err := AsType[Map](args[0])
 	if err != nil {
@@ -326,6 +338,9 @@ func UnwindFunc(query *Query, current Map, functionOptions *FunctionOptions, arg
 	if err != nil {
 		return nil, err
 	}
+	if args[0] == nil {
+		return nil, nil
+	}
 	slice, err := AsType[[]any](args[0])
 	if err != nil {
 		return nil, err
@@ -384,6 +399,9 @@ func FuseFunc(query *Query, current Map, functionOptions *FunctionOptions, args 
 	err := Guard(1, args)
 	if err != nil {
 		return nil, err
+	}
+	if args[0] == nil {
+		return nil, nil
 	}
 	rs, err := AsType[any](args[0])
 	if err != nil {
