@@ -274,7 +274,7 @@ func DefaultKeyFunc(query *Query, current Map, functionOptions *FunctionOptions,
 // |   0   |     any    |   value to be converted   |
 // |   1   |    string  |  type to convert value to |
 // --------------------------------------------------
-func ConvertFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+func ChangeTypeFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
 	err := Guard(2, args)
 	if err != nil {
 		return nil, err
@@ -441,7 +441,7 @@ func init() {
 	RegisterFunction("last", LastFunc)
 	RegisterFunction("elementat", ElementAtFunc)
 	RegisterFunction("defaultkey", DefaultKeyFunc)
-	RegisterFunction("convert", ConvertFunc)
+	RegisterFunction("changetype", ChangeTypeFunc)
 	RegisterFunction("unwind", UnwindFunc)
 	RegisterFunction("if", IfFunc)
 	RegisterImmediateFunction("fuse", FuseFunc)

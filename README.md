@@ -282,7 +282,7 @@ GenQL comes with a number of built-in functions for performing common data trans
 | LAST | Returns the last value in a series | LAST(expr) | No |   
 | ELEMENTAT | Returns the value at a specified index in a series | ELEMENTAT(expr, index) | No |
 | DEFAULTKEY | Returns a the only key in a select statement | DEFAULTKEY(expr) | No |
-| CONVERT | Converts a value to a specified type | CONVERT(expr, type) | No |
+| CHANGETYPE | Converts a value to a specified type | CONVERT(expr, type) | No |
 | UNWIND | Expands an array into a series of values | UNWIND(expr) | No | 
 | IF | Returns one value if a condition is true, and another if false | IF(cond, is_true, else) | No |
 | FUSE | Fuses a series of values into the current row | FUSE(expr) | Yes |
