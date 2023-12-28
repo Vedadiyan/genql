@@ -1673,9 +1673,20 @@ func RegisterFunction(name string, function Function) {
 	}
 	functions[strings.ToLower(name)] = function
 }
+
 func RegisterImmediateFunction(name string, function Function) {
 	RegisterFunction(name, function)
 	immediateFunctions = append(immediateFunctions, strings.ToLower(name))
+}
+
+func RegisterExternalFunction(name string, function func([]any) (any, error)) {
+	if functions == nil {
+		functions = make(map[string]Function)
+		immediateFunctions = make([]string, 0)
+	}
+	functions[strings.ToLower(name)] = func(_ *Query, _ Map, _ *FunctionOptions, args []any) (any, error) {
+		return function(args)
+	}
 }
 
 func CopyQuery(query *Query) *Query {
