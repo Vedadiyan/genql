@@ -635,6 +635,13 @@ func Expr(query *Query, current Map, expr sqlparser.Expr, options *ExpressionRea
 		{
 			return AggrFunExpr(query, current, expr)
 		}
+	case *sqlparser.ConvertExpr:
+		{
+			return FunExpr(query, current, &sqlparser.FuncExpr{
+				Exprs: []sqlparser.SelectExpr{&sqlparser.AliasedExpr{Expr: expr.Expr}, &sqlparser.AliasedExpr{Expr: &sqlparser.Literal{Type: sqlparser.VALUE, Val: expr.Type.Type}}},
+				Name:  sqlparser.NewIdentifierCI("changetype"),
+			})
+		}
 	default:
 		{
 			return nil, UNSUPPORTED_CASE
@@ -962,6 +969,10 @@ func LiteralExpr(query *Query, current Map, expr *sqlparser.Literal) (any, error
 			return n, nil
 		}
 	case sqlparser.StrVal:
+		{
+			return NeutalString(literalValue), nil
+		}
+	case sqlparser.VALUE:
 		{
 			return NeutalString(literalValue), nil
 		}

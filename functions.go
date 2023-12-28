@@ -296,7 +296,7 @@ func ChangeTypeFunc(query *Query, current Map, functionOptions *FunctionOptions,
 		{
 			return fmt.Sprintf("%v", *value), nil
 		}
-	case "double":
+	case "double", "decimal":
 		{
 			return ToFloat64(*value)
 		}
