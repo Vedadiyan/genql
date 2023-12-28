@@ -43,7 +43,7 @@ type (
 const (
 	_FULLPATTERN  = `('[^']*'+|\<\-|\*|[\w]+|\[[^\[\]]*\]|\{[^\{\}]*\})`
 	_ARRAYPATTERN = `\([^\)]*\)+|\w+`
-	_PIPEPATTERN  = `'[^']*'+|\w+(!?\|\w+)|\w+`
+	_PIPEPATTERN  = `('[^']*'+|\w+)(!?\|\w+)|\w+`
 )
 
 // IndexType enum
