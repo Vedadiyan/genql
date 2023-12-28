@@ -283,6 +283,9 @@ func ChangeTypeFunc(query *Query, current Map, functionOptions *FunctionOptions,
 	if err != nil {
 		return nil, err
 	}
+	if value == nil {
+		return nil, nil
+	}
 	conversionType, err := AsType[string](args[1])
 	if err != nil {
 		return nil, err

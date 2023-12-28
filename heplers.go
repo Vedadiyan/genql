@@ -48,6 +48,9 @@ func ValueOf(query *Query, current Map, any any) (any, error) {
 }
 
 func AsType[T any](value any) (*T, error) {
+	if value == nil {
+		return nil, nil
+	}
 	test := fmt.Sprintf("%T", *new(T))
 	_ = test
 	returnValue, ok := any(value).(T)
