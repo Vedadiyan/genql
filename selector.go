@@ -15,6 +15,7 @@ package genql
 
 import (
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -542,7 +543,23 @@ func Reader(data any, selectors []any) (any, error) {
 							}
 						case STRING:
 							{
-								copy[selector.GetKey()] = fmt.Sprintf("%v", data[selector.GetKey()])
+								value := data[selector.GetKey()]
+								switch value := value.(type) {
+								case float64:
+									{
+										remainder := math.Mod(value, 1)
+										if remainder == 0 {
+											copy[selector.GetKey()] = fmt.Sprintf("%d", int64(value))
+											continue
+										}
+										copy[selector.GetKey()] = fmt.Sprintf("%f", value)
+									}
+								default:
+									{
+										copy[selector.GetKey()] = fmt.Sprintf("%v", value)
+									}
+								}
+
 							}
 						case NUMBER:
 							{
