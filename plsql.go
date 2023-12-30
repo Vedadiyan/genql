@@ -1204,6 +1204,10 @@ func SelectExpr(query *Query, current Map, expr *sqlparser.SelectExprs) (Map, er
 func SubqueryExpr(query *Query, current Map, expr *sqlparser.Subquery) (any, error) {
 	// Backward Navigation
 	current["<-"] = query.data
+	query.postProcessors = append(query.postProcessors, func() error {
+		delete(current, "<-")
+		return nil
+	})
 	subQuery, err := Prepare(current, expr.Select)
 	if err != nil {
 		return nil, err
@@ -1234,6 +1238,10 @@ func CaseExpr(query *Query, current Map, expr *sqlparser.CaseExpr) (any, error) 
 func ExistExpr(query *Query, current Map, expr *sqlparser.ExistsExpr) (bool, error) {
 	// Backward Navigation
 	current["<-"] = query.data
+	query.postProcessors = append(query.postProcessors, func() error {
+		delete(current, "<-")
+		return nil
+	})
 	q, err := Prepare(current, expr.Subquery.Select)
 	if err != nil {
 		return false, err
