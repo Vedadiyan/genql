@@ -105,127 +105,127 @@ func TestCteWithDimensionSelector(t *testing.T) {
 }
 
 func TestSubQuery(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]] map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main`
 	Tester(cmd, expected, t)
 }
 
 func TestWhere(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id = 1`
 	Tester(cmd, expected, t)
 }
 
 func TestBinaryAnd(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id = 1 AND full_name = 'Pouya Vedadiyan'`
 	Tester(cmd, expected, t)
 }
 
 func TestBinaryOr(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]] map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id = 1 OR full_name = 'imaginary friend'`
 	Tester(cmd, expected, t)
 }
 
 func TestBinaryMinus(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]] map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id = 2-1 OR full_name = 'imaginary friend'`
 	Tester(cmd, expected, t)
 }
 
 func TestBinaryPlus(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]] map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id = 1+1-1 OR full_name = 'imaginary friend'`
 	Tester(cmd, expected, t)
 }
 
 func TestBinaryMultiply(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]] map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id = 1*1 OR full_name = 'imaginary friend'`
 	Tester(cmd, expected, t)
 }
 
 func TestBinaryDivide(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]] map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id = 1/1 OR full_name = 'imaginary friend'`
 	Tester(cmd, expected, t)
 }
 
 func TestIs(t *testing.T) {
-	expected := "[map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where email IS NULL`
 	Tester(cmd, expected, t)
 }
 
 func TestIsNot(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]] map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id IS NOT NULL`
 	Tester(cmd, expected, t)
 }
 
 func TestIn(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]] map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id IN (1,2)`
 	Tester(cmd, expected, t)
 }
 
 func TestNotIn(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]] map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id NOT IN (10,20)`
 	Tester(cmd, expected, t)
 }
 
 func TestGt(t *testing.T) {
-	expected := "[map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where profile.height > 170`
 	Tester(cmd, expected, t)
 }
 
 func TestGte(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]] map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where profile.height >= 170`
 	Tester(cmd, expected, t)
 }
 
 func TestLt(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where profile.height < 180`
 	Tester(cmd, expected, t)
 }
 
 func TestLte(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]] map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where profile.height <= 180`
 	Tester(cmd, expected, t)
 }
 
 func TestBetween(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]] map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where profile.height BETWEEN 169 AND 181`
 	Tester(cmd, expected, t)
 }
 
 func TestNotBetween(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]] map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where profile.height NOT BETWEEN 181 AND 191`
 	Tester(cmd, expected, t)
 }
 
 func TestLike(t *testing.T) {
-	expected := "[map[data:[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where email LIKE '%@%'`
 	Tester(cmd, expected, t)
 }
 
 func TestNotLike(t *testing.T) {
-	expected := "[map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where email NOT LIKE '%@%'`
 	Tester(cmd, expected, t)
 }
 
 func TestNotEqual(t *testing.T) {
-	expected := "[map[data:[map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]]"
+	expected := "[map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id != 1`
 	Tester(cmd, expected, t)
 }

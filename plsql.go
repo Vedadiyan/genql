@@ -67,6 +67,7 @@ type (
 		wg                  sync.WaitGroup
 		singletonExecutions map[string]any
 		postProcessors      []func() error
+		dual                bool
 		options             struct {
 			wrapped                 bool
 			postgresEscapingDialect bool
@@ -499,6 +500,7 @@ func BuilFromAliasedTable(query *Query, as string, expr sqlparser.SimpleTableExp
 			case nil:
 				{
 					if qualifier == "" && tableName == "dual" {
+						query.dual = true
 						array, err := AsArray(query.data)
 						if err != nil {
 							return err
@@ -1607,6 +1609,16 @@ func (query *Query) Exec() (result any, err error) {
 			err = r.(error)
 		}
 	}()
+	if query.dual {
+		rs, err := ExecSelect(query, query.from)
+		if err != nil {
+			return nil, err
+		}
+		if len(rs) == 0 {
+			return nil, nil
+		}
+		return rs[0], nil
+	}
 	slice := make([]any, 0)
 	for _, current := range query.from {
 		switch current := current.(type) {
