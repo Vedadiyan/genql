@@ -47,48 +47,54 @@ func Compare(slice []any, i int, j int, orderBy OrderByDefinition) (bool, error)
 	if err != nil {
 		return false, err
 	}
+	if first == nil {
+		return false, nil
+	}
 	second, err := ExecReader(slice[j], key)
 	if err != nil {
 		return false, err
 	}
+	if second == nil {
+		return true, nil
+	}
 	switch first.(type) {
 	case float64:
 		{
-			first, ok := first.(float64)
+			firstValue, ok := first.(float64)
 			if !ok {
 				return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to compare values. expected number but found %T", first))
 			}
-			second, ok := second.(float64)
+			secondValue, ok := second.(float64)
 			if !ok {
 				return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to compare values. expected number but found %T", first))
 			}
-			if first == second {
+			if firstValue == secondValue {
 				return Compare(slice, i, j, orderBy[1:])
 			}
-			return first > second != direction, nil
+			return firstValue > secondValue != direction, nil
 		}
 	case string:
 		{
-			first, ok := first.(string)
+			firstValue, ok := first.(string)
 			if !ok {
 				return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to compare values. expected string but found %T", first))
 			}
-			second, ok := second.(string)
+			secondValue, ok := second.(string)
 			if !ok {
 				return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to compare values. expected string but found %T", first))
 			}
-			if first == second {
+			if firstValue == secondValue {
 				return Compare(slice, i, j, orderBy[1:])
 			}
-			return first > second != direction, nil
+			return firstValue > secondValue != direction, nil
 		}
 	case bool:
 		{
-			first, ok := first.(bool)
+			firstValueRaw, ok := first.(bool)
 			if !ok {
 				return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to compare values. expected boolean but found %T", first))
 			}
-			second, ok := second.(bool)
+			secondValueRaw, ok := second.(bool)
 			if !ok {
 				return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to compare values. expected boolean but found %T", first))
 			}
@@ -97,10 +103,10 @@ func Compare(slice []any, i int, j int, orderBy OrderByDefinition) (bool, error)
 			}
 			firstValue := 0
 			secondValue := 0
-			if first {
+			if firstValueRaw {
 				firstValue = 1
 			}
-			if second {
+			if secondValueRaw {
 				secondValue = 1
 			}
 			return firstValue > secondValue != direction, nil
