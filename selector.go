@@ -14,6 +14,8 @@
 package genql
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"math"
 	"regexp"
@@ -99,6 +101,7 @@ func init() {
 	arrayPattern = regexp.MustCompile(_ARRAYPATTERN)
 	pipePattern = regexp.MustCompile(_PIPEPATTERN)
 	RegisterTopLevelFunction("mix", Mix)
+	RegisterTopLevelFunction("distinct", Distinct)
 }
 
 func NewIndex[T int | [2]int](value T) *IndexSelector {
@@ -660,6 +663,34 @@ func MixObject(data map[string]any) (map[string]any, error) {
 		mapper[key] = item
 	}
 	return mapper, nil
+}
+
+func Distinct(data any) (any, error) {
+	switch data := data.(type) {
+	case []any:
+		{
+			slice := make([]any, 0)
+			mapper := make(map[string]bool)
+			for _, item := range data {
+				sha256 := sha256.New()
+				_, err := sha256.Write([]byte(fmt.Sprintf("%v", item)))
+				if err != nil {
+					return nil, err
+				}
+				hash := sha256.Sum(nil)
+				hashBase64 := base64.StdEncoding.EncodeToString(hash)
+				if _, ok := mapper[hashBase64]; !ok {
+					mapper[hashBase64] = true
+					slice = append(slice, item)
+				}
+			}
+			return slice, nil
+		}
+	default:
+		{
+			return nil, UNSUPPORTED_CASE
+		}
+	}
 }
 
 func RegisterTopLevelFunction(name string, function func(any) (any, error)) {
