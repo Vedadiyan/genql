@@ -225,7 +225,7 @@ func BuildUnion(query *Query, expr *sqlparser.Union) error {
 	if err != nil {
 		return err
 	}
-	leftData, err := left.Exec()
+	leftData, err := left.exec()
 	if err != nil {
 		return err
 	}
@@ -233,7 +233,7 @@ func BuildUnion(query *Query, expr *sqlparser.Union) error {
 	if err != nil {
 		return err
 	}
-	rightData, err := right.Exec()
+	rightData, err := right.exec()
 	if err != nil {
 		return err
 	}
@@ -270,7 +270,7 @@ func BuildCte(query *Query, expr *sqlparser.With) error {
 			if err != nil {
 				return nil, err
 			}
-			rs, err := query.Exec()
+			rs, err := query.exec()
 			if err != nil {
 				return nil, err
 			}
@@ -519,7 +519,7 @@ func BuilFromAliasedTable(query *Query, as string, expr sqlparser.SimpleTableExp
 			if err != nil {
 				return err
 			}
-			data, err := subquery.Exec()
+			data, err := subquery.exec()
 			if err != nil {
 				return err
 			}
@@ -1214,7 +1214,7 @@ func SubqueryExpr(query *Query, current Map, expr *sqlparser.Subquery) (any, err
 	if err != nil {
 		return nil, err
 	}
-	return subQuery.Exec()
+	return subQuery.exec()
 }
 
 func CaseExpr(query *Query, current Map, expr *sqlparser.CaseExpr) (any, error) {
@@ -1258,7 +1258,7 @@ func ExistExpr(query *Query, current Map, expr *sqlparser.ExistsExpr) (bool, err
 		}
 		q.from[i] = item
 	}
-	rs, err := q.Exec()
+	rs, err := q.exec()
 	array, ok := rs.([]any)
 	if !ok {
 		return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to build `EXIST` expression. expected an array but found %T", array))
@@ -1603,7 +1603,7 @@ func ExecOrderBy(query *Query, current []any) ([]any, error) {
 	return current, nil
 }
 
-func (query *Query) Exec() (result any, err error) {
+func (query *Query) exec() (result any, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)
@@ -1626,7 +1626,7 @@ func (query *Query) Exec() (result any, err error) {
 			{
 				copy := CopyQuery(query)
 				copy.from = current
-				rs, err := copy.Exec()
+				rs, err := copy.exec()
 				if err != nil {
 					return nil, err
 				}
@@ -1679,6 +1679,17 @@ func (query *Query) Exec() (result any, err error) {
 		postProcessor()
 	}
 	return rs, nil
+}
+
+func (query *Query) Exec() (result []any, err error) {
+	rs, err := query.exec()
+	if err != nil {
+		return nil, err
+	}
+	if slice, ok := rs.([]any); ok {
+		return slice, nil
+	}
+	return []any{rs}, nil
 }
 
 func RegexComparison(left any, pattern string) (bool, error) {

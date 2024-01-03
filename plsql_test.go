@@ -38,7 +38,7 @@ func Tester(cmd string, expected string, t *testing.T) {
 		t.Log(err)
 		t.FailNow()
 	}
-	rs, err := query.Exec()
+	rs, err := query.exec()
 	v := fmt.Sprintf("%v", rs)
 	_ = v
 	if err != nil {
