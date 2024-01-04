@@ -72,6 +72,7 @@ type (
 			wrapped                 bool
 			postgresEscapingDialect bool
 			completed               func()
+			errors                  func(err error)
 		}
 	}
 )
@@ -96,6 +97,12 @@ func PostgresEscapingDialect() QueryOption {
 func CompletedCallback(callback func()) QueryOption {
 	return func(query *Query) {
 		query.options.completed = callback
+	}
+}
+
+func Errors(handler func(error)) QueryOption {
+	return func(query *Query) {
+		query.options.errors = handler
 	}
 }
 
@@ -1303,7 +1310,12 @@ func FunExpr(query *Query, current Map, expr *sqlparser.FuncExpr) (any, error) {
 				return nil, e
 			}
 			go func() {
-				function(query, current, nil, slice)
+				_, err := function(query, current, nil, slice)
+				if err != nil {
+					if query.options.errors != nil {
+						query.options.errors(err)
+					}
+				}
 			}()
 			return Ommit(true), nil
 		}
@@ -1318,7 +1330,12 @@ func FunExpr(query *Query, current Map, expr *sqlparser.FuncExpr) (any, error) {
 			}
 			query.wg.Add(1)
 			go func() {
-				function(query, current, nil, slice)
+				_, err := function(query, current, nil, slice)
+				if err != nil {
+					if query.options.errors != nil {
+						query.options.errors(err)
+					}
+				}
 				query.wg.Done()
 			}()
 			return Ommit(true), nil
@@ -1676,7 +1693,10 @@ func (query *Query) exec() (result any, err error) {
 	}
 	query.wg.Wait()
 	for _, postProcessor := range query.postProcessors {
-		postProcessor()
+		err := postProcessor()
+		if err != nil {
+			return nil, err
+		}
 	}
 	return rs, nil
 }
