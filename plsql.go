@@ -100,7 +100,7 @@ func CompletedCallback(callback func()) QueryOption {
 	}
 }
 
-func Errors(handler func(error)) QueryOption {
+func UnReportedErrors(handler func(error)) QueryOption {
 	return func(query *Query) {
 		query.options.errors = handler
 	}
