@@ -235,7 +235,7 @@ As an example, a function that performs caching can be executed asynchronously. 
 #### Await 
 Async executions can be awaited using the `AWAIT` operator. For example:
 
-   SELECT (SELECT AWAIT("Query.somekey.anotherkey") AS item FROM (SELECT ASYNC.DOSOMETHING("data.key") AS Query)) FROM "data"
+    SELECT (SELECT AWAIT("Query.somekey.anotherkey") AS item FROM (SELECT ASYNC.DOSOMETHING("data.key") AS Query)) FROM "data"
 
 ### SPIN Execution
 SPIN allows running a function without blocking the query or returning any result. When the executor encounters a SPIN function, it submits it to a background worker, returns immediately, and doesn't wait for its completion. This means the function call doesn't affect the corresponding row.
