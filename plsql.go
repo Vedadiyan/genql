@@ -1230,6 +1230,11 @@ func SubqueryExpr(query *Query, current Map, expr *sqlparser.Subquery) (any, err
 		return nil, err
 	}
 	query.postProcessors = append(query.postProcessors, subQuery.postProcessors...)
+	query.wg.Add(1)
+	go func() {
+		subQuery.wg.Wait()
+		query.wg.Done()
+	}()
 	return rs, nil
 }
 
@@ -1280,6 +1285,11 @@ func ExistExpr(query *Query, current Map, expr *sqlparser.ExistsExpr) (bool, err
 		return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to build `EXIST` expression. expected an array but found %T", array))
 	}
 	query.postProcessors = append(query.postProcessors, q.postProcessors...)
+	query.wg.Add(1)
+	go func() {
+		q.wg.Wait()
+		query.wg.Done()
+	}()
 	return len(array) > 0, err
 }
 
@@ -1701,7 +1711,6 @@ func (query *Query) exec() (result any, err error) {
 	if query.options.completed != nil {
 		query.options.completed()
 	}
-	query.wg.Wait()
 	return rs, nil
 }
 
@@ -1710,6 +1719,7 @@ func (query *Query) Exec() (result []any, err error) {
 	if err != nil {
 		return nil, err
 	}
+	query.wg.Wait()
 	for _, postProcessor := range query.postProcessors {
 		err := postProcessor()
 		if err != nil {
