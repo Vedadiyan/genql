@@ -301,13 +301,3 @@ func TestFuse(t *testing.T) {
 	cmd := `SELECT id, FUSE(profile) AS test FROM "root.data"`
 	Tester(cmd, expected, t)
 }
-
-// func TestAsync(t *testing.T) {
-// 	RegisterFunction("test", func(*Query, Map, *FunctionOptions, []any) (any, error) {
-// 		<-time.After(time.Second * 5)
-// 		return map[string]any{"item": "test item"}, nil
-// 	})
-// 	expected := "[map[id:1 test.hair:black test.height:170] map[id:2 test.hair:blond test.height:180]]"
-// 	cmd := `SELECT (SELECT await("A.test.item") FROM (SELECT async.test() AS test) AS A) AS test FROM "root.data"`
-// 	Tester(cmd, expected, t)
-// }
