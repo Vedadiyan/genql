@@ -38,23 +38,18 @@ func Tester(cmd string, expected string, t *testing.T) {
 		t.Log(err)
 		t.FailNow()
 	}
-	rs, err := query.exec()
+	rs, err := query.Exec()
 	v := fmt.Sprintf("%v", rs)
 	_ = v
 	if err != nil {
 		t.Log(err)
 		t.FailNow()
 	}
-	array, ok := rs.([]any)
-	if !ok {
-		t.Logf("test failed. expected array but found %T", rs)
-		t.FailNow()
-	}
-	if len(array) == 0 {
+	if len(rs) == 0 {
 		t.Log("test failed. the output array is empty")
 		t.FailNow()
 	}
-	if fmt.Sprintf("%v", array) != expected {
+	if fmt.Sprintf("%v", rs) != expected {
 		t.FailNow()
 	}
 }

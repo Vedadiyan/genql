@@ -1279,6 +1279,7 @@ func ExistExpr(query *Query, current Map, expr *sqlparser.ExistsExpr) (bool, err
 	if !ok {
 		return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to build `EXIST` expression. expected an array but found %T", array))
 	}
+	query.postProcessors = append(query.postProcessors, q.postProcessors...)
 	return len(array) > 0, err
 }
 
