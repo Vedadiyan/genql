@@ -67,6 +67,7 @@ type (
 		wg                  sync.WaitGroup
 		singletonExecutions map[string]any
 		postProcessors      []func() error
+		awaits              []func()
 		dual                bool
 		options             struct {
 			wrapped                 bool
@@ -114,6 +115,7 @@ func New(data Map, query string, options ...QueryOption) (*Query, error) {
 		orderByDefinition:   make(OrderByDefinition, 0),
 		singletonExecutions: make(map[string]any),
 		postProcessors:      make([]func() error, 0),
+		awaits:              make([]func(), 0),
 	}
 	for _, option := range options {
 		option(q)
@@ -154,6 +156,7 @@ func Prepare(data Map, statement sqlparser.Statement, options ...QueryOption) (*
 		orderByDefinition:   make(OrderByDefinition, 0),
 		singletonExecutions: map[string]any{},
 		postProcessors:      make([]func() error, 0),
+		awaits:              make([]func(), 0),
 	}
 	for _, option := range options {
 		option(q)
@@ -531,6 +534,7 @@ func BuilFromAliasedTable(query *Query, as string, expr sqlparser.SimpleTableExp
 				return err
 			}
 			query.postProcessors = append(query.postProcessors, subquery.postProcessors...)
+			query.awaits = append(query.awaits, subquery.awaits...)
 			query.wg.Add(1)
 			go func() {
 				subquery.wg.Wait()
@@ -1236,6 +1240,7 @@ func SubqueryExpr(query *Query, current Map, expr *sqlparser.Subquery) (any, err
 		return nil, err
 	}
 	query.postProcessors = append(query.postProcessors, subQuery.postProcessors...)
+	query.awaits = append(query.awaits, subQuery.awaits...)
 	query.wg.Add(1)
 	go func() {
 		subQuery.wg.Wait()
@@ -1291,6 +1296,7 @@ func ExistExpr(query *Query, current Map, expr *sqlparser.ExistsExpr) (bool, err
 		return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to build `EXIST` expression. expected an array but found %T", array))
 	}
 	query.postProcessors = append(query.postProcessors, q.postProcessors...)
+	query.awaits = append(query.awaits, q.awaits...)
 	query.wg.Add(1)
 	go func() {
 		q.wg.Wait()
@@ -1301,6 +1307,21 @@ func ExistExpr(query *Query, current Map, expr *sqlparser.ExistsExpr) (bool, err
 
 func FunExpr(query *Query, current Map, expr *sqlparser.FuncExpr) (any, error) {
 	name := expr.Name.Lowered()
+
+	if name == "await" {
+		var rs any
+		var err error
+		query.awaits = append(query.awaits, func() {
+			slice, e := FuncArgReader(query, current, expr.Exprs)
+			if e != nil {
+				err = e
+				return
+			}
+			rs = slice[0]
+		})
+		return &rs, err
+	}
+
 	function, ok := functions[expr.Name.Lowered()]
 	if !ok {
 		return nil, INVALID_FUNCTION.Extend(fmt.Sprintf("function %s cannot be found", expr.Name.String()))
