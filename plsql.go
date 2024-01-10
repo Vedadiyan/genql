@@ -232,7 +232,7 @@ func BuildUnion(query *Query, expr *sqlparser.Union) error {
 	if err != nil {
 		return err
 	}
-	leftData, err := left.exec()
+	leftData, err := left.Exec()
 	if err != nil {
 		return err
 	}
@@ -240,7 +240,7 @@ func BuildUnion(query *Query, expr *sqlparser.Union) error {
 	if err != nil {
 		return err
 	}
-	rightData, err := right.exec()
+	rightData, err := right.Exec()
 	if err != nil {
 		return err
 	}
@@ -277,7 +277,7 @@ func BuildCte(query *Query, expr *sqlparser.With) error {
 			if err != nil {
 				return nil, err
 			}
-			rs, err := query.exec()
+			rs, err := query.Exec()
 			if err != nil {
 				return nil, err
 			}
@@ -1220,7 +1220,6 @@ func SelectExpr(query *Query, current Map, expr *sqlparser.SelectExprs) (Map, er
 	return data, nil
 }
 
-// SUBQ
 func SubqueryExpr(query *Query, current Map, expr *sqlparser.Subquery) (any, error) {
 	// Backward Navigation
 	current["<-"] = query.data
