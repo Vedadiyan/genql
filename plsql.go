@@ -1159,6 +1159,10 @@ func SelectExpr(query *Query, current Map, expr *sqlparser.SelectExprs) (Map, er
 		case *sqlparser.StarExpr:
 			{
 				for key, value := range current {
+					query.postProcessors = append(query.postProcessors, func() error {
+						delete(data, key)
+						return nil
+					})
 					data[key] = value
 				}
 			}
@@ -1221,7 +1225,12 @@ func SubqueryExpr(query *Query, current Map, expr *sqlparser.Subquery) (any, err
 	if err != nil {
 		return nil, err
 	}
-	return subQuery.exec()
+	rs, err := subQuery.exec()
+	if err != nil {
+		return nil, err
+	}
+	query.postProcessors = append(query.postProcessors, subQuery.postProcessors...)
+	return rs, nil
 }
 
 func CaseExpr(query *Query, current Map, expr *sqlparser.CaseExpr) (any, error) {
@@ -1692,12 +1701,6 @@ func (query *Query) exec() (result any, err error) {
 		query.options.completed()
 	}
 	query.wg.Wait()
-	for _, postProcessor := range query.postProcessors {
-		err := postProcessor()
-		if err != nil {
-			return nil, err
-		}
-	}
 	return rs, nil
 }
 
@@ -1705,6 +1708,12 @@ func (query *Query) Exec() (result []any, err error) {
 	rs, err := query.exec()
 	if err != nil {
 		return nil, err
+	}
+	for _, postProcessor := range query.postProcessors {
+		err := postProcessor()
+		if err != nil {
+			return nil, err
+		}
 	}
 	if slice, ok := rs.([]any); ok {
 		return slice, nil
