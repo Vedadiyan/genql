@@ -1160,7 +1160,7 @@ func SelectExpr(query *Query, current Map, expr *sqlparser.SelectExprs) (Map, er
 			{
 				for key, value := range current {
 					query.postProcessors = append(query.postProcessors, func() error {
-						delete(data, key)
+						delete(data, "<-")
 						return nil
 					})
 					data[key] = value
