@@ -1209,7 +1209,17 @@ func SelectExpr(query *Query, current Map, expr *sqlparser.SelectExprs) (Map, er
 						if err != nil {
 							return err
 						}
-						data[name] = *valueRaw
+
+						value := *valueRaw
+						for {
+							x, ok := value.(*any)
+							if !ok {
+								break
+							}
+							value = *x
+						}
+
+						data[name] = value
 						return nil
 					})
 				}
