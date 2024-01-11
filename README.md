@@ -238,6 +238,7 @@ Async executions can be awaited using the `AWAIT` operator. For example:
     SELECT (SELECT AWAIT("Query.somekey.anotherkey") AS item FROM (SELECT ASYNC.DOSOMETHING("data.key") AS Query)) FROM "data"
 
 **IMPORTANT**
+
 Using `AWAIT` is generally a sign of bad code as it is not required in 99% of cases. In fact, ASYNC function should not be used within FROM clauses and WHERE conditions so that they would never need to be awaited. It is absolutely OK TO NOT AWAIT an ASYNC function since GenQL does this under the hood.
 
 ### SPIN Execution
