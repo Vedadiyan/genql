@@ -239,7 +239,7 @@ Async executions can be awaited using the `AWAIT` operator. For example:
 
 **IMPORTANT**
 
-Using `AWAIT` is generally a sign of bad code as it is not required in 99% of cases. In fact, ASYNC function should not be used within FROM clauses and WHERE conditions so that they would never need to be awaited. It is absolutely OK TO NOT AWAIT an ASYNC function since GenQL does this under the hood.
+Using `AWAIT` is generally a sign of bad code as it is not required in 99% of cases. In fact, ASYNC functions should not be used within FROM clauses and WHERE conditions so that they would never need to be awaited. It is absolutely OK TO NOT AWAIT an ASYNC function since GenQL does this under the hood.
 
 ### SPIN Execution
 SPIN allows running a function without blocking the query or returning any result. When the executor encounters a SPIN function, it submits it to a background worker, returns immediately, and doesn't wait for its completion. This means the function call doesn't affect the corresponding row.
