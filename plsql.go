@@ -1739,7 +1739,14 @@ func (query *Query) exec() (result any, err error) {
 	if query.limitDefinition != -1 {
 		limit = query.limitDefinition
 	}
+	if offset >= len(rs) {
+		goto FINALIZE
+	}
+	if limit >= len(rs) {
+		limit = len(rs)
+	}
 	rs = rs[offset:][:limit]
+FINALIZE:
 	if query.options.completed != nil {
 		query.options.completed()
 	}
