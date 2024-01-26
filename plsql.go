@@ -480,24 +480,7 @@ func BuilFromAliasedTable(query *Query, as string, expr sqlparser.SimpleTableExp
 			if err != nil {
 				return err
 			}
-			if array, ok := data.([]map[string]any); ok {
-				slice := make([]any, len(array))
-				for index, item := range array {
-					slice[index] = item
-				}
-				data = slice
-			}
 			switch data := data.(type) {
-			case []any, Map:
-				{
-					array, err := AsArray(data)
-					if err != nil {
-						return err
-					}
-					alias := ProcessAlias(array, as)
-					query.from = alias
-					return nil
-				}
 			case CteEvaluation:
 				{
 					data, err := data()
@@ -524,8 +507,17 @@ func BuilFromAliasedTable(query *Query, as string, expr sqlparser.SimpleTableExp
 					}
 					return nil
 				}
+			default:
+				{
+					array, err := AsArray(data)
+					if err != nil {
+						return err
+					}
+					alias := ProcessAlias(array, as)
+					query.from = alias
+					return nil
+				}
 			}
-			return INVALID_TYPE.Extend(fmt.Sprintf("failed to build `ALIAS` expression. did not expect %T", data))
 		}
 	case *sqlparser.DerivedTable:
 		{

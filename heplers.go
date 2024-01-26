@@ -16,6 +16,7 @@ package genql
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -72,9 +73,23 @@ func AsArray(data any) ([]any, error) {
 		}
 	default:
 		{
-			return nil, INVALID_TYPE
+			t := reflect.TypeOf(data)
+			v := reflect.ValueOf(data)
+			kind := t.Kind()
+			switch kind {
+			case reflect.Array, reflect.Slice:
+				{
+					len := v.Len()
+					slice := make([]any, len)
+					for i := 0; i < len; i++ {
+						slice[i] = v.Index(i).Interface()
+					}
+					return slice, nil
+				}
+			}
 		}
 	}
+	return nil, INVALID_TYPE
 }
 
 func IsImmediateFunction(name string) bool {
