@@ -388,7 +388,7 @@ func IfFunc(query *Query, current Map, functionOptions *FunctionOptions, args []
 	return *whenFalse, nil
 }
 
-//	If condition
+//	Fuse
 //
 // --------------------------------------------------
 // | index |    type    |       description         |
@@ -417,6 +417,32 @@ func FuseFunc(query *Query, current Map, functionOptions *FunctionOptions, args 
 			return nil, EXPECTATION_FAILED.Extend(fmt.Sprintf("fuse cannot be used with %T type", rs))
 		}
 	}
+}
+
+//	Date Range
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |     any    |           from            |
+// |   1   |     any    |            to             |
+// --------------------------------------------------
+func DateRangeFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(2, args)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		from string
+		to   string
+	)
+	if args[0] != nil {
+		from = fmt.Sprintf("%v", args[0])
+	}
+	if args[1] != nil {
+		from = fmt.Sprintf("%v", args[1])
+	}
+	return []string{from, to}, nil
 }
 
 func Guard(n int, args []any) error {
@@ -466,4 +492,5 @@ func init() {
 	RegisterFunction("unwind", UnwindFunc)
 	RegisterFunction("if", IfFunc)
 	RegisterImmediateFunction("fuse", FuseFunc)
+	RegisterImmediateFunction("daterange", DateRangeFunc)
 }
