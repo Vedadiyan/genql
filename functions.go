@@ -445,6 +445,29 @@ func DateRangeFunc(query *Query, current Map, functionOptions *FunctionOptions, 
 	return []string{from, to}, nil
 }
 
+//	Constant
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |   string   |           name            |
+// --------------------------------------------------
+func ConstantFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(1, args)
+	if err != nil {
+		return nil, err
+	}
+	if query.options.constants == nil {
+		return nil, fmt.Errorf("constants not initialized")
+	}
+	key := fmt.Sprintf("%v", args[0])
+	value, ok := query.options.constants[key]
+	if !ok {
+		return nil, fmt.Errorf("no constant by the name `%s` was found", key)
+	}
+	return value, nil
+}
+
 func Guard(n int, args []any) error {
 	if len(args) < n {
 		return fmt.Errorf("too few arguments")
@@ -493,4 +516,5 @@ func init() {
 	RegisterFunction("if", IfFunc)
 	RegisterImmediateFunction("fuse", FuseFunc)
 	RegisterImmediateFunction("daterange", DateRangeFunc)
+	RegisterImmediateFunction("constant", ConstantFunc)
 }

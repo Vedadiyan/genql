@@ -73,6 +73,7 @@ type (
 			postgresEscapingDialect bool
 			completed               func()
 			errors                  func(err error)
+			constants               map[string]any
 		}
 	}
 )
@@ -103,6 +104,12 @@ func CompletedCallback(callback func()) QueryOption {
 func UnReportedErrors(handler func(error)) QueryOption {
 	return func(query *Query) {
 		query.options.errors = handler
+	}
+}
+
+func WithConstants(constants map[string]any) QueryOption {
+	return func(query *Query) {
+		query.options.constants = constants
 	}
 }
 
