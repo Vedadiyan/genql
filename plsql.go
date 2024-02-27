@@ -162,7 +162,7 @@ func New(data Map, query string, options ...QueryOption) (*Query, error) {
 	return q, nil
 }
 
-func Prepare(data Map, statement sqlparser.Statement, options ...QueryOption) (*Query, error) {
+func Prepare(data Map, statement sqlparser.Statement, options *Options) (*Query, error) {
 	q := &Query{
 		offsetDefinition:    -1,
 		limitDefinition:     -1,
@@ -170,10 +170,7 @@ func Prepare(data Map, statement sqlparser.Statement, options ...QueryOption) (*
 		orderByDefinition:   make(OrderByDefinition, 0),
 		singletonExecutions: map[string]any{},
 		postProcessors:      make([]func() error, 0),
-		options:             &Options{},
-	}
-	for _, option := range options {
-		option(q)
+		options:             options,
 	}
 	switch q.options.wrapped {
 	case true:
@@ -245,7 +242,7 @@ func BuildSelect(query *Query, slct *sqlparser.Select) error {
 }
 
 func BuildUnion(query *Query, expr *sqlparser.Union) error {
-	left, err := Prepare(query.data, expr.Left)
+	left, err := Prepare(query.data, expr.Left, query.options)
 	if err != nil {
 		return err
 	}
@@ -253,7 +250,7 @@ func BuildUnion(query *Query, expr *sqlparser.Union) error {
 	if err != nil {
 		return err
 	}
-	right, err := Prepare(query.data, expr.Right)
+	right, err := Prepare(query.data, expr.Right, query.options)
 	if err != nil {
 		return err
 	}
@@ -290,7 +287,7 @@ func BuildCte(query *Query, expr *sqlparser.With) error {
 	for _, cte := range expr.Ctes {
 		copy := *cte
 		query.data[copy.ID.String()] = CteEvaluation(func() (any, error) {
-			query, err := Prepare(query.data, copy.Subquery.Select)
+			query, err := Prepare(query.data, copy.Subquery.Select, query.options)
 			if err != nil {
 				return nil, err
 			}
@@ -538,7 +535,7 @@ func BuilFromAliasedTable(query *Query, as string, expr sqlparser.SimpleTableExp
 		}
 	case *sqlparser.DerivedTable:
 		{
-			subquery, err := Prepare(query.data, expr.Select)
+			subquery, err := Prepare(query.data, expr.Select, query.options)
 			if err != nil {
 				return err
 			}
@@ -1253,7 +1250,7 @@ func SubqueryExpr(query *Query, current Map, expr *sqlparser.Subquery) (any, err
 		delete(current, "<-")
 		return nil
 	})
-	subQuery, err := Prepare(current, expr.Select)
+	subQuery, err := Prepare(current, expr.Select, query.options)
 	if err != nil {
 		return nil, err
 	}
@@ -1297,7 +1294,7 @@ func ExistExpr(query *Query, current Map, expr *sqlparser.ExistsExpr) (bool, err
 		delete(current, "<-")
 		return nil
 	})
-	q, err := Prepare(current, expr.Subquery.Select)
+	q, err := Prepare(current, expr.Subquery.Select, query.options)
 	if err != nil {
 		return false, err
 	}
