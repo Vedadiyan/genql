@@ -499,7 +499,7 @@ func GetVarFunc(query *Query, current Map, functionOptions *FunctionOptions, arg
 // |   0   |     any    |           value           |
 // --------------------------------------------------
 func SetVarFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
-	err := Guard(1, args)
+	err := Guard(2, args)
 	if err != nil {
 		return nil, err
 	}
