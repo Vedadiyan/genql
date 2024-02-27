@@ -51,7 +51,15 @@ type (
 		Key   string
 		Value bool
 	}
-
+	Options struct {
+		wrapped                 bool
+		postgresEscapingDialect bool
+		completed               func()
+		errors                  func(err error)
+		constants               map[string]any
+		vars                    map[string]any
+		varsMut                 sync.RWMutex
+	}
 	Query struct {
 		data                Map
 		from                []any
@@ -68,15 +76,7 @@ type (
 		singletonExecutions map[string]any
 		postProcessors      []func() error
 		dual                bool
-		options             struct {
-			wrapped                 bool
-			postgresEscapingDialect bool
-			completed               func()
-			errors                  func(err error)
-			constants               map[string]any
-			vars                    map[string]any
-			varsMut                 sync.RWMutex
-		}
+		options             *Options
 	}
 )
 
@@ -129,6 +129,7 @@ func New(data Map, query string, options ...QueryOption) (*Query, error) {
 		orderByDefinition:   make(OrderByDefinition, 0),
 		singletonExecutions: make(map[string]any),
 		postProcessors:      make([]func() error, 0),
+		options:             &Options{},
 	}
 	for _, option := range options {
 		option(q)
@@ -169,6 +170,7 @@ func Prepare(data Map, statement sqlparser.Statement, options ...QueryOption) (*
 		orderByDefinition:   make(OrderByDefinition, 0),
 		singletonExecutions: map[string]any{},
 		postProcessors:      make([]func() error, 0),
+		options:             &Options{},
 	}
 	for _, option := range options {
 		option(q)
