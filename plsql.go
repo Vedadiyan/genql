@@ -74,6 +74,8 @@ type (
 			completed               func()
 			errors                  func(err error)
 			constants               map[string]any
+			vars                    map[string]any
+			varsMut                 sync.RWMutex
 		}
 	}
 )
@@ -110,6 +112,12 @@ func UnReportedErrors(handler func(error)) QueryOption {
 func WithConstants(constants map[string]any) QueryOption {
 	return func(query *Query) {
 		query.options.constants = constants
+	}
+}
+
+func WithVars(vars map[string]any) QueryOption {
+	return func(query *Query) {
+		query.options.vars = vars
 	}
 }
 

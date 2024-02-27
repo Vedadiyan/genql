@@ -468,6 +468,49 @@ func ConstantFunc(query *Query, current Map, functionOptions *FunctionOptions, a
 	return value, nil
 }
 
+//	Get Variable
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |   string   |           name            |
+// --------------------------------------------------
+func GetVarFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(1, args)
+	if err != nil {
+		return nil, err
+	}
+	key := fmt.Sprintf("%v", args[0])
+	query.options.varsMut.RLock()
+	defer query.options.varsMut.RUnlock()
+	value, ok := query.options.vars[key]
+	if !ok {
+		return nil, fmt.Errorf("no variable by the name `%s` was found", key)
+	}
+	return value, nil
+}
+
+//	Set Variable
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |   string   |           name            |
+// |   0   |     any    |           value           |
+// --------------------------------------------------
+func SetVarFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(1, args)
+	if err != nil {
+		return nil, err
+	}
+	key := fmt.Sprintf("%v", args[0])
+	value := args[1]
+	query.options.varsMut.Lock()
+	defer query.options.varsMut.Unlock()
+	query.options.vars[key] = value
+	return value, nil
+}
+
 func Guard(n int, args []any) error {
 	if len(args) < n {
 		return fmt.Errorf("too few arguments")
@@ -517,4 +560,6 @@ func init() {
 	RegisterImmediateFunction("fuse", FuseFunc)
 	RegisterImmediateFunction("daterange", DateRangeFunc)
 	RegisterImmediateFunction("constant", ConstantFunc)
+	RegisterImmediateFunction("getvar", GetVarFunc)
+	RegisterImmediateFunction("setvar", SetVarFunc)
 }
