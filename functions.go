@@ -508,7 +508,7 @@ func SetVarFunc(query *Query, current Map, functionOptions *FunctionOptions, arg
 	query.options.varsMut.Lock()
 	defer query.options.varsMut.Unlock()
 	query.options.vars[key] = value
-	return value, nil
+	return Ommit(true), nil
 }
 
 func Guard(n int, args []any) error {
