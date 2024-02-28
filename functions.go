@@ -511,6 +511,44 @@ func SetVarFunc(query *Query, current Map, functionOptions *FunctionOptions, arg
 	return Ommit(true), nil
 }
 
+//	Raise When
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |    bool    |        condition          |
+// |   0   |     any    |          error            |
+// --------------------------------------------------
+func RaiseWhenFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(2, args)
+	if err != nil {
+		return nil, err
+	}
+	cond, err := AsType[bool](args[0])
+	if err != nil {
+		return nil, err
+	}
+	if *cond {
+		return nil, fmt.Errorf(fmt.Sprintf("%v", args[1]))
+	}
+	return Ommit(true), nil
+}
+
+//	Raise
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |     any    |          error            |
+// --------------------------------------------------
+func RaiseFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(1, args)
+	if err != nil {
+		return nil, err
+	}
+	return nil, fmt.Errorf(fmt.Sprintf("%v", args[0]))
+}
+
 func Guard(n int, args []any) error {
 	if len(args) < n {
 		return fmt.Errorf("too few arguments")
@@ -562,4 +600,6 @@ func init() {
 	RegisterImmediateFunction("constant", ConstantFunc)
 	RegisterImmediateFunction("getvar", GetVarFunc)
 	RegisterImmediateFunction("setvar", SetVarFunc)
+	RegisterImmediateFunction("raise_when", RaiseWhenFunc)
+	RegisterImmediateFunction("raise", RaiseFunc)
 }
