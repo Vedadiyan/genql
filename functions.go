@@ -485,7 +485,7 @@ func GetVarFunc(query *Query, current Map, functionOptions *FunctionOptions, arg
 	defer query.options.varsMut.RUnlock()
 	value, ok := query.options.vars[key]
 	if !ok {
-		return nil, fmt.Errorf("no variable by the name `%s` was found", key)
+		return nil, nil
 	}
 	return value, nil
 }
