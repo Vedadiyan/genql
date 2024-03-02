@@ -468,6 +468,87 @@ func ConstantFunc(query *Query, current Map, functionOptions *FunctionOptions, a
 	return value, nil
 }
 
+//	Get Variable
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |   string   |           name            |
+// --------------------------------------------------
+func GetVarFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(1, args)
+	if err != nil {
+		return nil, err
+	}
+	key := fmt.Sprintf("%v", args[0])
+	query.options.varsMut.RLock()
+	defer query.options.varsMut.RUnlock()
+	value, ok := query.options.vars[key]
+	if !ok {
+		return nil, nil
+	}
+	return value, nil
+}
+
+//	Set Variable
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |   string   |           name            |
+// |   0   |     any    |           value           |
+// --------------------------------------------------
+func SetVarFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(2, args)
+	if err != nil {
+		return nil, err
+	}
+	key := fmt.Sprintf("%v", args[0])
+	value := args[1]
+	query.options.varsMut.Lock()
+	defer query.options.varsMut.Unlock()
+	query.options.vars[key] = value
+	return Ommit(true), nil
+}
+
+//	Raise When
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |    bool    |        condition          |
+// |   0   |     any    |          error            |
+// --------------------------------------------------
+func RaiseWhenFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(2, args)
+	if err != nil {
+		return nil, err
+	}
+	cond, err := AsType[bool](args[0])
+	if err != nil {
+		return nil, err
+	}
+	if *cond {
+		return nil, fmt.Errorf(fmt.Sprintf("%v", args[1]))
+	}
+	return Ommit(true), nil
+}
+
+//	Raise
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |     any    |          error            |
+// --------------------------------------------------
+func RaiseFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(1, args)
+	if err != nil {
+		return nil, err
+	}
+	return nil, fmt.Errorf(fmt.Sprintf("%v", args[0]))
+}
+
 func Guard(n int, args []any) error {
 	if len(args) < n {
 		return fmt.Errorf("too few arguments")
@@ -517,4 +598,8 @@ func init() {
 	RegisterImmediateFunction("fuse", FuseFunc)
 	RegisterImmediateFunction("daterange", DateRangeFunc)
 	RegisterImmediateFunction("constant", ConstantFunc)
+	RegisterImmediateFunction("getvar", GetVarFunc)
+	RegisterImmediateFunction("setvar", SetVarFunc)
+	RegisterImmediateFunction("raise_when", RaiseWhenFunc)
+	RegisterImmediateFunction("raise", RaiseFunc)
 }
