@@ -296,9 +296,9 @@ GenQL comes with a number of built-in functions for performing common data trans
 | IF | Returns one value if a condition is true, and another if false | IF(cond, is_true, else) | No |
 | FUSE | Fuses a series of values into the current row | FUSE(expr) | Yes |
 | DATERANGE | Converts two given dates to daterange | DATERANGE(from, to) | Yes |
-| CONSTANT | Gets a constant passed to the GenQL current context from code | CONSTANT(key) | Yes |
-| GETVAR | Gets a variable from GenQL's variable context if the variables are enabled using `WithVars` options | GETVAR(key) | Yes |
-| SETVAR | Sets a variable to GenQL's variable context if the variables are enabled using `WithVars` options | SETVAR(key, expr) | Yes |
+| CONSTANT | Gets a constant passed to the GenQL current context from code using `WithConstants` option | CONSTANT(key) | Yes |
+| GETVAR | Gets a variable from GenQL's variable context if the variables are enabled using `WithVars` option | GETVAR(key) | Yes |
+| SETVAR | Sets a variable to GenQL's variable context if the variables are enabled using `WithVars` option | SETVAR(key, expr) | Yes |
 | RAISE | Throws a new error and breaks the current execution | RAISE(expr) | Yes |
 | RAISE_WHEN | Throws a new error if condition is met and breaks the current execution | RAISE(condition, expr) | Yes |
 
