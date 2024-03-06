@@ -295,6 +295,12 @@ GenQL comes with a number of built-in functions for performing common data trans
 | UNWIND | Expands an array into a series of values | UNWIND(expr) | No | 
 | IF | Returns one value if a condition is true, and another if false | IF(cond, is_true, else) | No |
 | FUSE | Fuses a series of values into the current row | FUSE(expr) | Yes |
+| DATERANGE | Converts two given dates to daterange | DATERANGE(from, to) | Yes |
+| CONSTANT | Gets a constant passed to the GenQL current context from code | CONSTANT(key) | Yes |
+| GETVAR | Gets a variable from GenQL's variable context if the variables are enabled using `WithVars` options | GETVAR(key) | Yes |
+| SETVAR | Sets a variable to GenQL's variable context if the variables are enabled using `WithVars` options | SETVAR(key, expr) | Yes |
+| RAISE | Throws a new error and breaks the current execution | RAISE(expr) | Yes |
+| RAISE_WHEN | Throws a new error if condition is met and breaks the current execution | RAISE(condition, expr) | Yes |
 
 ## Backward Navigation 
 GenQL by default scopes the subqueries and 'where exists' clauses to the current row that is being processed. However, if this is not a desired behavior, backward navigation can be used to change the scope of the selection. This can be simply done by using `<-` operator. Each time the `<-` operator is used, the current row is navigated one step backward. 
