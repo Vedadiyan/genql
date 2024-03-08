@@ -172,6 +172,7 @@ func Prepare(data Map, statement sqlparser.Statement, options *Options) (*Query,
 		postProcessors:      make([]func() error, 0),
 		options:             options,
 	}
+	q.data = data
 	err := Build(q, statement)
 	if err != nil {
 		return nil, err
