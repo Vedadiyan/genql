@@ -39,19 +39,16 @@ func Tester(cmd string, expected string, t *testing.T) {
 		t.FailNow()
 	}
 	rs, err := query.Exec()
-	str, err := json.Marshal(rs)
-	xx := string(str)
-	_ = xx
 	v := fmt.Sprintf("%v", rs)
 	_ = v
 	if err != nil {
 		t.Log(err)
 		t.FailNow()
 	}
-	if len(rs) == 0 {
-		t.Log("test failed. the output array is empty")
-		t.FailNow()
-	}
+	// if len(rs) == 0 {
+	// 	t.Log("test failed. the output array is empty")
+	// 	t.FailNow()
+	// }
 	if fmt.Sprintf("%v", rs) != expected {
 		t.FailNow()
 	}

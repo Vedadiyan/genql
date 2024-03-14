@@ -282,7 +282,7 @@ func BuildCte(query *Query, expr *sqlparser.With) error {
 			if err != nil {
 				return nil, err
 			}
-			rs, err := query.exec()
+			rs, err := query.Exec()
 			if err != nil {
 				return nil, err
 			}
@@ -1758,7 +1758,7 @@ FINALIZE:
 	return rs, nil
 }
 
-func (query *Query) Exec() (result []any, err error) {
+func (query *Query) Exec() (result any, err error) {
 	rs, err := query.exec()
 	if err != nil {
 		return nil, err
@@ -1769,6 +1769,9 @@ func (query *Query) Exec() (result []any, err error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+	if query.dual {
+		return rs, nil
 	}
 	if slice, ok := rs.([]any); ok {
 		return slice, nil
