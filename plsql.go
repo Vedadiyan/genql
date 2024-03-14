@@ -282,7 +282,7 @@ func BuildCte(query *Query, expr *sqlparser.With) error {
 			if err != nil {
 				return nil, err
 			}
-			rs, err := query.Exec()
+			rs, err := query.exec()
 			if err != nil {
 				return nil, err
 			}

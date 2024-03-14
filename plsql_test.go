@@ -39,6 +39,9 @@ func Tester(cmd string, expected string, t *testing.T) {
 		t.FailNow()
 	}
 	rs, err := query.Exec()
+	str, err := json.Marshal(rs)
+	xx := string(str)
+	_ = xx
 	v := fmt.Sprintf("%v", rs)
 	_ = v
 	if err != nil {
@@ -312,5 +315,17 @@ func TestFuse(t *testing.T) {
 // 	})
 // 	expected := "[map[id:1 test.hair:black test.height:170] map[id:2 test.hair:blond test.height:180]]"
 // 	cmd := `SELECT (SELECT async.test2(await("A.test")) FROM (SELECT async.test() AS test) AS A) AS test FROM "root.data"`
+// 	Tester(cmd, expected, t)
+// }
+
+// func TestSelect1(t *testing.T) {
+// 	expected := "[map[id:1 test.hair:black test.height:170] map[id:2 test.hair:blond test.height:180]]"
+// 	cmd := `
+// 	WITH Query AS (
+// 		SELECT CHANGETYPE((SELECT 1 AS id), 'ARRAY') AS Data
+// 	)
+// 	SELECT * FROM "root.data" AS MAIN
+// 	JOIN "Query.Data" T ON MAIN.id = T.id
+// 	`
 // 	Tester(cmd, expected, t)
 // }
