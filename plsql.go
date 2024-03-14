@@ -237,7 +237,7 @@ func BuildUnion(query *Query, expr *sqlparser.Union) error {
 	if err != nil {
 		return err
 	}
-	leftData, err := left.Exec()
+	leftData, err := left.execAndPostProcess()
 	if err != nil {
 		return err
 	}
@@ -245,7 +245,7 @@ func BuildUnion(query *Query, expr *sqlparser.Union) error {
 	if err != nil {
 		return err
 	}
-	rightData, err := right.Exec()
+	rightData, err := right.execAndPostProcess()
 	if err != nil {
 		return err
 	}
@@ -282,7 +282,7 @@ func BuildCte(query *Query, expr *sqlparser.With) error {
 			if err != nil {
 				return nil, err
 			}
-			rs, err := query.Exec()
+			rs, err := query.execAndPostProcess()
 			if err != nil {
 				return nil, err
 			}
@@ -1758,7 +1758,7 @@ FINALIZE:
 	return rs, nil
 }
 
-func (query *Query) Exec() (result any, err error) {
+func (query *Query) execAndPostProcess() (result any, err error) {
 	rs, err := query.exec()
 	if err != nil {
 		return nil, err
@@ -1770,8 +1770,13 @@ func (query *Query) Exec() (result any, err error) {
 			return nil, err
 		}
 	}
-	if query.dual {
-		return rs, nil
+	return rs, nil
+}
+
+func (query *Query) Exec() (result []any, err error) {
+	rs, err := query.execAndPostProcess()
+	if err != nil {
+		return nil, err
 	}
 	if slice, ok := rs.([]any); ok {
 		return slice, nil

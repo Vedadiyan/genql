@@ -45,10 +45,10 @@ func Tester(cmd string, expected string, t *testing.T) {
 		t.Log(err)
 		t.FailNow()
 	}
-	// if len(rs) == 0 {
-	// 	t.Log("test failed. the output array is empty")
-	// 	t.FailNow()
-	// }
+	if len(rs) == 0 {
+		t.Log("test failed. the output array is empty")
+		t.FailNow()
+	}
 	if fmt.Sprintf("%v", rs) != expected {
 		t.FailNow()
 	}
