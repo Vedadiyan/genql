@@ -15,10 +15,19 @@ package genql
 
 import (
 	"bytes"
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
+	"encoding/base32"
+	"encoding/base64"
+	"encoding/gob"
+	"encoding/hex"
 	"fmt"
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 //	Calculates the sum of a given numeric array
@@ -549,6 +558,186 @@ func RaiseFunc(query *Query, current Map, functionOptions *FunctionOptions, args
 	return nil, fmt.Errorf(fmt.Sprintf("%v", args[0]))
 }
 
+//	Hash Function
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |     any    |    data to be hashed      |
+// |   1   |    string  |       hash function       |
+// --------------------------------------------------
+func HashFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(2, args)
+	if err != nil {
+		return nil, err
+	}
+	var buffer bytes.Buffer
+	enc := gob.NewEncoder(&buffer)
+	err = enc.Encode(struct{ Data any }{Data: args[0]})
+	if err != nil {
+		return nil, err
+	}
+	hashFunction, err := AsType[string](args[1])
+	if err != nil {
+		return nil, err
+	}
+	switch strings.ToLower(*hashFunction) {
+	case "sha1":
+		{
+			sha1 := sha1.New()
+			_, err := sha1.Write(buffer.Bytes())
+			if err != nil {
+				return nil, err
+			}
+			return hex.EncodeToString(sha1.Sum(nil)), nil
+		}
+	case "sha256":
+		{
+			sha256 := sha256.New()
+			_, err := sha256.Write(buffer.Bytes())
+			if err != nil {
+				return nil, err
+			}
+			return hex.EncodeToString(sha256.Sum(nil)), nil
+		}
+	case "sha512":
+		{
+			sha512 := sha512.New()
+			_, err := sha512.Write(buffer.Bytes())
+			if err != nil {
+				return nil, err
+			}
+			return hex.EncodeToString(sha512.Sum(nil)), nil
+		}
+	case "md5":
+		{
+			md5 := md5.New()
+			_, err := md5.Write(buffer.Bytes())
+			if err != nil {
+				return nil, err
+			}
+			return hex.EncodeToString(md5.Sum(nil)), nil
+		}
+	default:
+		{
+			return nil, UNSUPPORTED_CASE.Extend(fmt.Sprintf("%s is not supported", *hashFunction))
+		}
+	}
+}
+
+//	Encode Function
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |     any    |    data to be encoded     |
+// |   1   |    string  |           base            |
+// --------------------------------------------------
+func EncodeFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(2, args)
+	if err != nil {
+		return nil, err
+	}
+	var buffer bytes.Buffer
+	enc := gob.NewEncoder(&buffer)
+	err = enc.Encode(struct{ Data any }{Data: args[0]})
+	if err != nil {
+		return nil, err
+	}
+	base, err := AsType[string](args[1])
+	if err != nil {
+		return nil, err
+	}
+	switch strings.ToLower(*base) {
+	case "base64":
+		{
+			return base64.URLEncoding.EncodeToString(buffer.Bytes()), nil
+		}
+	case "base32":
+		{
+			return base32.StdEncoding.EncodeToString(buffer.Bytes()), nil
+		}
+	case "hex":
+		{
+			return hex.EncodeToString(buffer.Bytes()), nil
+		}
+	default:
+		{
+			return nil, UNSUPPORTED_CASE.Extend(fmt.Sprintf("%s is not supported", *base))
+		}
+	}
+}
+
+//	Decode Function
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |     any    |    data to be decoded     |
+// |   1   |    string  |           base            |
+// --------------------------------------------------
+func DecodeFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(2, args)
+	if err != nil {
+		return nil, err
+	}
+	var buffer bytes.Buffer
+	data, err := AsType[string](args[0])
+	if err != nil {
+		return nil, err
+	}
+	base, err := AsType[string](args[1])
+	if err != nil {
+		return nil, err
+	}
+	switch strings.ToLower(*base) {
+	case "base64":
+		{
+			bytes, err := base64.URLEncoding.DecodeString(*data)
+			if err != nil {
+				return nil, err
+			}
+			buffer.Write(bytes)
+		}
+	case "base32":
+		{
+			bytes, err := base32.StdEncoding.DecodeString(*data)
+			if err != nil {
+				return nil, err
+			}
+			buffer.Write(bytes)
+		}
+	case "hex":
+		{
+			bytes, err := hex.DecodeString(*data)
+			if err != nil {
+				return nil, err
+			}
+			buffer.Write(bytes)
+		}
+	default:
+		{
+			return nil, UNSUPPORTED_CASE.Extend(fmt.Sprintf("%s is not supported", *base))
+		}
+	}
+	enc := gob.NewDecoder(&buffer)
+	var decodedData struct{ Data any }
+	err = enc.Decode(&decodedData)
+	if err != nil {
+		return nil, err
+	}
+	return decodedData.Data, nil
+}
+
+// Timestamp Function
+func TimestampFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(0, args)
+	if err != nil {
+		return nil, err
+	}
+	return time.Now().UnixNano(), nil
+}
+
 func Guard(n int, args []any) error {
 	if len(args) < n {
 		return fmt.Errorf("too few arguments")
@@ -602,4 +791,8 @@ func init() {
 	RegisterImmediateFunction("setvar", SetVarFunc)
 	RegisterImmediateFunction("raise_when", RaiseWhenFunc)
 	RegisterImmediateFunction("raise", RaiseFunc)
+	RegisterFunction("hash", HashFunc)
+	RegisterFunction("encode", EncodeFunc)
+	RegisterFunction("decode", DecodeFunc)
+	RegisterImmediateFunction("timestamp", TimestampFunc)
 }
