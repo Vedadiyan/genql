@@ -745,6 +745,7 @@ func ArrayFunc(query *Query, current Map, functionOptions *FunctionOptions, args
 // --------------------------------------------------
 // | index |    type    |       description         |
 // |-------|------------|---------------------------|
+// |   0   |   string   |       type of array       |
 // |   *   |     any    |        array item         |
 // --------------------------------------------------
 func ArrayOfFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
