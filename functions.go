@@ -729,7 +729,7 @@ func DecodeFunc(query *Query, current Map, functionOptions *FunctionOptions, arg
 	return decodedData.Data, nil
 }
 
-//	Decode Function
+//	Array Function
 //
 // --------------------------------------------------
 // | index |    type    |       description         |
