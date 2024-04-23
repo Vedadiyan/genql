@@ -729,6 +729,17 @@ func DecodeFunc(query *Query, current Map, functionOptions *FunctionOptions, arg
 	return decodedData.Data, nil
 }
 
+//	Decode Function
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   *   |     any    |        array item         |
+// --------------------------------------------------
+func ArrayFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	return args, nil
+}
+
 // Timestamp Function
 func TimestampFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
 	err := Guard(0, args)
@@ -795,4 +806,5 @@ func init() {
 	RegisterFunction("encode", EncodeFunc)
 	RegisterFunction("decode", DecodeFunc)
 	RegisterImmediateFunction("timestamp", TimestampFunc)
+	RegisterFunction("array", ArrayFunc)
 }
