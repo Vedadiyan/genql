@@ -88,7 +88,7 @@ func DoubleQuotesToBackTick(str string) (string, error) {
 	return buffer.String(), nil
 }
 
-func FindIndex(str string) ([][]int, error) {
+func FindArrayIndex(str string) ([][]int, error) {
 	hold := false
 	output := make([][]int, 0)
 	stack := make([]int, 0)
@@ -133,7 +133,7 @@ func FindIndex(str string) ([][]int, error) {
 
 func FixIdiomaticArray(input string) (string, error) {
 	const _TOKEN = "ARRAY"
-	indexes, err := FindIndex(input)
+	indexes, err := FindArrayIndex(input)
 	if err != nil {
 		panic(err)
 	}
