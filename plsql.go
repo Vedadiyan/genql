@@ -54,6 +54,7 @@ type (
 	Options struct {
 		wrapped                 bool
 		postgresEscapingDialect bool
+		idomaticArrays          bool
 		completed               func()
 		errors                  func(err error)
 		constants               map[string]any
@@ -94,6 +95,12 @@ func Wrapped() QueryOption {
 func PostgresEscapingDialect() QueryOption {
 	return func(query *Query) {
 		query.options.postgresEscapingDialect = true
+	}
+}
+
+func IdomaticArrays() QueryOption {
+	return func(query *Query) {
+		query.options.idomaticArrays = true
 	}
 }
 
@@ -146,6 +153,13 @@ func New(data Map, query string, options ...QueryOption) (*Query, error) {
 	}
 	if q.options.postgresEscapingDialect {
 		rs, err := DoubleQuotesToBackTick(query)
+		if err != nil {
+			return nil, err
+		}
+		query = rs
+	}
+	if q.options.idomaticArrays {
+		rs, err := FixIdiomaticArray(query)
 		if err != nil {
 			return nil, err
 		}

@@ -87,3 +87,66 @@ func DoubleQuotesToBackTick(str string) (string, error) {
 	}
 	return buffer.String(), nil
 }
+
+func FindIndex(str string) ([][]int, error) {
+	hold := false
+	output := make([][]int, 0)
+	stack := make([]int, 0)
+	pos := 0
+	for i := 0; i < len(str); i++ {
+		r := str[i]
+		switch r {
+		case '\\':
+			{
+				i++
+			}
+		case '"':
+			{
+				hold = !hold
+			}
+		}
+		if hold {
+			continue
+		}
+		switch r {
+		case '[':
+			{
+				index := make([]int, 2)
+				index[0] = i
+				output = append(output, index)
+				stack = append(stack, pos)
+				pos++
+			}
+		case ']':
+			{
+				if len(stack) == 0 {
+					return nil, fmt.Errorf("index out of range")
+				}
+				index := stack[0]
+				output[index][1] = i
+				stack = stack[1:]
+			}
+		}
+	}
+	return output, nil
+}
+
+func FixIdiomaticArray(input string) (string, error) {
+	const _TOKEN = "ARRAY"
+	indexes, err := FindIndex(input)
+	if err != nil {
+		panic(err)
+	}
+	offset := 0
+	for _, index := range indexes {
+		str := input[:index[0]+offset]
+		str += _TOKEN
+		str += "("
+		str += input[index[0]+offset+1 : index[1]+offset]
+		str += ")"
+		str += input[index[1]+offset+1:]
+		input = str
+		offset += len(_TOKEN)
+	}
+	return input, nil
+}
