@@ -746,63 +746,6 @@ func ArrayFunc(query *Query, current Map, functionOptions *FunctionOptions, args
 	return args, nil
 }
 
-//	ArrayOf Function
-//
-// --------------------------------------------------
-// | index |    type    |       description         |
-// |-------|------------|---------------------------|
-// |   0   |   string   |       type of array       |
-// |   *   |     any    |        array item         |
-// --------------------------------------------------
-func ArrayOfFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
-	if len(args) < 2 {
-		return nil, fmt.Errorf("too few arguments")
-	}
-	arrayType, err := AsType[string](args[0])
-	if err != nil {
-		return nil, err
-	}
-	switch strings.ToLower(*arrayType) {
-	case "string":
-		{
-			slice := make([]string, len(args)-1)
-			for index, value := range args[1:] {
-				slice[index] = fmt.Sprintf("%v", value)
-			}
-			return slice, nil
-		}
-	case "double":
-		{
-			slice := make([]float64, len(args)-1)
-			for index, value := range args[1:] {
-				value, err := ToFloat64(value)
-				if err != nil {
-					return nil, err
-				}
-				slice[index] = value
-			}
-			return slice, nil
-		}
-	case "integer":
-		{
-			slice := make([]int, len(args)-1)
-			for index, value := range args[1:] {
-				value, err := ToInt(value)
-				if err != nil {
-					return nil, err
-				}
-				slice[index] = value
-			}
-			return slice, nil
-		}
-	default:
-		{
-			return nil, UNSUPPORTED_CASE.Extend(fmt.Sprintf("%s is not a valid conversion type", *arrayType))
-		}
-	}
-
-}
-
 // Timestamp Function
 func TimestampFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
 	err := Guard(0, args)
@@ -870,5 +813,4 @@ func init() {
 	RegisterFunction("decode", DecodeFunc)
 	RegisterImmediateFunction("timestamp", TimestampFunc)
 	RegisterFunction("array", ArrayFunc)
-	RegisterFunction("arrayof", ArrayOfFunc)
 }
