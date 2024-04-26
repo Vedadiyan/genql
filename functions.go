@@ -392,7 +392,13 @@ func IfFunc(query *Query, current Map, functionOptions *FunctionOptions, args []
 		return nil, err
 	}
 	if *condition {
+		if whenTrue == nil {
+			return nil, nil
+		}
 		return *whenTrue, nil
+	}
+	if whenFalse == nil {
+		return nil, nil
 	}
 	return *whenFalse, nil
 }
