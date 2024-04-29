@@ -1828,6 +1828,12 @@ func RegisterExternalFunction(name string, function func([]any) (any, error)) {
 	}
 }
 
+func Import(functions map[string]func([]any) (any, error)) {
+	for name, function := range functions {
+		RegisterExternalFunction(name, function)
+	}
+}
+
 func CopyQuery(query *Query) *Query {
 	return &Query{
 		data:              query.data,
