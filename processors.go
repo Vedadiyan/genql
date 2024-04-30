@@ -89,7 +89,7 @@ func DoubleQuotesToBackTick(str string) (string, error) {
 }
 
 func FindArrayIndex(str string) ([][]int, error) {
-	hold := false
+	var hold *rune
 	output := make([][]int, 0)
 	stack := make([]int, 0)
 	pos := 0
@@ -102,10 +102,28 @@ func FindArrayIndex(str string) ([][]int, error) {
 			}
 		case '"':
 			{
-				hold = !hold
+				if hold == nil {
+					r := '"'
+					hold = &r
+					continue
+				}
+				if *hold == '"' {
+					hold = nil
+				}
+			}
+		case '\'':
+			{
+				if hold == nil {
+					r := '\''
+					hold = &r
+					continue
+				}
+				if *hold == '\'' {
+					hold = nil
+				}
 			}
 		}
-		if hold {
+		if hold != nil {
 			continue
 		}
 		switch r {
