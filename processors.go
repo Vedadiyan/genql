@@ -122,6 +122,17 @@ func FindArrayIndex(str string) ([][]int, error) {
 					hold = nil
 				}
 			}
+		case '`':
+			{
+				if hold == nil {
+					r := '`'
+					hold = &r
+					continue
+				}
+				if *hold == '`' {
+					hold = nil
+				}
+			}
 		}
 		if hold != nil {
 			continue
