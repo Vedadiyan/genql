@@ -93,6 +93,7 @@ func TestCteWithPipeSelector(t *testing.T) {
 	cmd := `WITH Main AS (SELECT likes FROM "root.data") SELECT * FROM "Main.likes{name}"`
 	Tester(cmd, expected, t)
 }
+
 func TestCteWithDimensionSelector(t *testing.T) {
 	expected := "[map[expertiese:MAX name:GO] map[expertiese:MAX name:rust]]"
 	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT * FROM "Main.technologies[0:1]"`

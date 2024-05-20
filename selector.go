@@ -46,7 +46,7 @@ type (
 const (
 	_FULLPATTERN  = `('[^']*'+|\<\-|\*|[\w]+|\[[^\[\]]*\]|\{[^\{\}]*\})`
 	_ARRAYPATTERN = `\([^\)]*\)+|\w+`
-	_PIPEPATTERN  = `('[^']*'+|\w+)(!?\|\w+)|\w+`
+	_PIPEPATTERN  = `((\w|'[^']*')|\|\w+)+`
 )
 
 // IndexType enum
@@ -539,6 +539,13 @@ func Reader(data any, selectors []any) (any, error) {
 				{
 					copy := make(map[string]any)
 					for _, selector := range selector {
+						if fn, ok := data[selector.keySelector].(func() (any, error)); ok {
+							rs, err := fn()
+							if err != nil {
+								return nil, err
+							}
+							data[selector.keySelector] = rs
+						}
 						switch selector.GetType() {
 						case NONE:
 							{
