@@ -302,6 +302,12 @@ func TestFuse(t *testing.T) {
 	Tester(cmd, expected, t)
 }
 
+func TestMultipleInnerJoin(t *testing.T) {
+	expected := "[map[A_full_name:Pouya Vedadiyan B_full_name:Pouya Vedadiyan] map[A_full_name:imaginary friend B_full_name:imaginary friend] map[A_full_name:Pouya Vedadiyan B_full_name:Pouya Vedadiyan] map[A_full_name:imaginary friend B_full_name:imaginary friend]]"
+	cmd := `SELECT A.full_name AS A_full_name , B.full_name AS B_full_name FROM root.data C, root.data A JOIN root.data B on A.id = B.id`
+	Tester(cmd, expected, t)
+}
+
 // func TestAsync(t *testing.T) {
 // 	RegisterFunction("test", func(*Query, Map, *FunctionOptions, []any) (any, error) {
 // 		<-time.After(time.Second * 5)

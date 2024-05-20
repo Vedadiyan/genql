@@ -216,16 +216,20 @@ func Build(query *Query, statement Statement) error {
 }
 
 func BuildSelect(query *Query, slct *sqlparser.Select) error {
-	if len(slct.From) > 1 {
-		return EXPECTATION_FAILED.Extend("this version of gql does not support multiple table selection")
-	}
 	err := BuildCte(query, slct.With)
 	if err != nil {
 		return err
 	}
-	err = BuildFrom(query, &slct.From[0])
-	if err != nil {
-		return err
+	if len(slct.From) > 1 {
+		err := BuildCartesianJoin(query, slct)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := BuildFrom(query, &slct.From[0])
+		if err != nil {
+			return err
+		}
 	}
 	err = BuildLimit(query, slct.Limit)
 	if err != nil {
@@ -382,6 +386,33 @@ func BuildOrder(query *Query, orderBy *sqlparser.OrderBy) error {
 	return nil
 }
 
+func BuildCartesianJoin(query *Query, slct *sqlparser.Select) error {
+	var data []any
+	postProcessors := make(map[*func() error]func() error)
+	for _, from := range slct.From {
+		query := CopyQuery(query)
+		err := BuildFrom(query, &from)
+		if err != nil {
+			return nil
+		}
+		rs, err := ExecCartesianJoin(data, query.from)
+		if err != nil {
+			return nil
+		}
+		data = rs
+		for _, postProcessor := range query.postProcessors {
+			ref := &postProcessor
+			postProcessors[ref] = postProcessor
+		}
+	}
+	query.from = data
+	query.postProcessors = make([]func() error, 0)
+	for _, postProcessor := range postProcessors {
+		query.postProcessors = append(query.postProcessors, postProcessor)
+	}
+	return nil
+}
+
 func BuildFrom(query *Query, tableExpr *sqlparser.TableExpr) error {
 	switch tableExpr := (*tableExpr).(type) {
 	case *sqlparser.AliasedTableExpr:
@@ -416,6 +447,43 @@ func BuildJoin(query *Query, joinExpr *sqlparser.JoinTableExpr) error {
 	}
 	query.from = rs
 	return nil
+}
+
+func ExecCartesianJoin(left []any, right []any) ([]any, error) {
+	if len(left) < len(right) {
+		left, right = right, left
+	}
+	slice := make([]any, 0)
+	for _, left := range left {
+		left, ok := left.(Map)
+		if !ok {
+			return nil, INVALID_TYPE.Extend(fmt.Sprintf("failed to build `JOIN` expression, expected object but found %T", left))
+		}
+		joined := false
+		for _, right := range right {
+			current := make(Map)
+			for key, value := range left {
+				current[key] = value
+			}
+			right, ok := right.(Map)
+			if !ok {
+				return nil, INVALID_TYPE.Extend(fmt.Sprintf("failed to build `JOIN` expression, expected object but found %T", left))
+			}
+			for key, value := range right {
+				current[key] = value
+			}
+			slice = append(slice, current)
+			joined = true
+		}
+		if !joined {
+			current := make(Map)
+			for key, value := range left {
+				current[key] = value
+			}
+			slice = append(slice, current)
+		}
+	}
+	return slice, nil
 }
 
 func ExecJoin(query *Query, left []any, right []any, joinExpr sqlparser.Expr, joinType sqlparser.JoinType) ([]any, error) {
