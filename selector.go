@@ -46,7 +46,7 @@ type (
 const (
 	_FULLPATTERN  = `('[^']*'+|\<\-|\*|[\w]+|\[[^\[\]]*\]|\{[^\{\}]*\})`
 	_ARRAYPATTERN = `\([^\)]*\)+|\w+`
-	_PIPEPATTERN  = `((\w|'[^']*')|\|\w+)+`
+	_PIPEPATTERN  = `((([\w\.\[\]\d])|'[^']*')|\|\w+)+`
 )
 
 // IndexType enum
@@ -539,21 +539,27 @@ func Reader(data any, selectors []any) (any, error) {
 				{
 					copy := make(map[string]any)
 					for _, selector := range selector {
-						if fn, ok := data[selector.keySelector].(func() (any, error)); ok {
-							rs, err := fn()
+						selectors, err := ParseSelector(selector.keySelector)
+						if err != nil {
+							return nil, err
+						}
+						value, err := Reader(data, selectors)
+						if err != nil {
+							return nil, err
+						}
+						if fn, ok := value.(func() (any, error)); ok {
+							value, err = fn()
 							if err != nil {
 								return nil, err
 							}
-							data[selector.keySelector] = rs
 						}
 						switch selector.GetType() {
 						case NONE:
 							{
-								copy[selector.GetKey()] = data[selector.GetKey()]
+								copy[selector.GetKey()] = value
 							}
 						case STRING:
 							{
-								value := data[selector.GetKey()]
 								switch value := value.(type) {
 								case float64:
 									{
@@ -573,7 +579,7 @@ func Reader(data any, selectors []any) (any, error) {
 							}
 						case NUMBER:
 							{
-								str, ok := data[selector.GetKey()].(string)
+								str, ok := value.(string)
 								if !ok {
 									return nil, INVALID_TYPE.Extend(fmt.Sprintf("failed to execute pipe operation. %s is of %T type", selector.GetKey(), data[selector.GetKey()]))
 								}
