@@ -586,7 +586,7 @@ func Reader(data any, selectors []any) (any, error) {
 				if err != nil {
 					return nil, err
 				}
-				mapper[selector.Key] = rs
+				mapper[strings.TrimRightFunc(strings.TrimLeftFunc(selector.Key, TrimFunc), TrimFunc)] = rs
 			}
 			return Reader(mapper, selectors[1:])
 		}
@@ -763,6 +763,10 @@ func Distinct(data any) (any, error) {
 			return nil, UNSUPPORTED_CASE
 		}
 	}
+}
+
+func TrimFunc(r rune) bool {
+	return r == ' ' || r == '\t' || r == '\n' || r == '\r'
 }
 
 func RegisterTopLevelFunction(name string, function func(any) (any, error)) {
