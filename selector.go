@@ -27,8 +27,12 @@ import (
 type (
 	KeySelector              string
 	TopLevelFunctionSelector string
-	IndexType                int
-	IndexSelector            struct {
+	MixerSelector            struct {
+		Key       string
+		Selectors []any
+	}
+	IndexType     int
+	IndexSelector struct {
 		indexSelector int
 		rangeSelector [2]int
 		selectorType  IndexType
@@ -75,6 +79,8 @@ const (
 	_LCUR      = '{'
 	_RCUR      = '}'
 	_SQ        = '\''
+	_LT        = '<'
+	_GT        = '>'
 )
 
 // Keywords
@@ -285,7 +291,37 @@ func ParsePipe(match string) ([]*PipeSelector, error) {
 	return slice, nil
 }
 
+func ParseMixer(match string) (*MixerSelector, error) {
+	segments := strings.SplitN(match, "->", 2)
+	selector, key := segments[0], segments[0]
+	if len(segments) == 2 {
+		selector, key = segments[0], segments[1]
+	}
+	matches, err := ParseSelector(selector)
+	if err != nil {
+		return nil, err
+	}
+	mixerSelector := MixerSelector{
+		Key:       key,
+		Selectors: matches,
+	}
+	return &mixerSelector, nil
+}
+
 func ParseSelector(selector string) ([]any, error) {
+	mixedSelectors := strings.Split(selector, ";")
+	if len(mixedSelectors) != 1 {
+		slice := make([]*MixerSelector, 0)
+		for _, mixesSelector := range mixedSelectors {
+			selectors, err := ParseMixer(mixesSelector)
+			if err != nil {
+				return nil, err
+			}
+			slice = append(slice, selectors)
+		}
+		return []any{slice}, nil
+	}
+
 	functions := strings.SplitN(selector, "=>", 2)
 	slice := make([]any, 0)
 	if len(functions) == 2 {
@@ -392,12 +428,19 @@ func Unwind(data []any, depth int) []any {
 	return slice
 }
 
-func SelectObject(data map[string]any, key string) any {
+func SelectObject(data map[string]any, key string) (any, error) {
 	value, ok := data[key]
 	if !ok {
-		return nil
+		return nil, nil
 	}
-	return value
+	if fn, ok := value.(func() (any, error)); ok {
+		rs, err := fn()
+		if err != nil {
+			return nil, err
+		}
+		value = rs
+	}
+	return value, nil
 }
 
 func ExecReader(data any, selector string) (any, error) {
@@ -450,7 +493,10 @@ func Reader(data any, selectors []any) (any, error) {
 			switch data := data.(type) {
 			case map[string]any:
 				{
-					rs := SelectObject(data, string(selector))
+					rs, err := SelectObject(data, string(selector))
+					if err != nil {
+						return nil, err
+					}
 					return Reader(rs, selectors[1:])
 				}
 			case []any:
@@ -532,6 +578,18 @@ func Reader(data any, selectors []any) (any, error) {
 				}
 			}
 		}
+	case []*MixerSelector:
+		{
+			mapper := make(map[string]any)
+			for _, selector := range selector {
+				rs, err := ReaderExecutor(data, selector.Selectors)
+				if err != nil {
+					return nil, err
+				}
+				mapper[selector.Key] = rs
+			}
+			return Reader(mapper, selectors[1:])
+		}
 	case []*PipeSelector:
 		{
 			switch data := data.(type) {
@@ -539,6 +597,7 @@ func Reader(data any, selectors []any) (any, error) {
 				{
 					copy := make(map[string]any)
 					for _, selector := range selector {
+						// REVIEW
 						selectors, err := ParseSelector(selector.keySelector)
 						if err != nil {
 							return nil, err
