@@ -597,7 +597,6 @@ func Reader(data any, selectors []any) (any, error) {
 				{
 					copy := make(map[string]any)
 					for _, selector := range selector {
-						// REVIEW
 						selectors, err := ParseSelector(selector.keySelector)
 						if err != nil {
 							return nil, err
@@ -605,12 +604,6 @@ func Reader(data any, selectors []any) (any, error) {
 						value, err := Reader(data, selectors)
 						if err != nil {
 							return nil, err
-						}
-						if fn, ok := value.(func() (any, error)); ok {
-							value, err = fn()
-							if err != nil {
-								return nil, err
-							}
 						}
 						switch selector.GetType() {
 						case NONE:
