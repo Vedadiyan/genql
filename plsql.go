@@ -1286,6 +1286,9 @@ func CaseExpr(query *Query, current Map, expr *sqlparser.CaseExpr) (any, error) 
 			return Expr(query, current, when.Val, nil)
 		}
 	}
+	if expr.Else == nil {
+		return Expr(query, current, &sqlparser.NullVal{}, nil)
+	}
 	return Expr(query, current, expr.Else, nil)
 }
 
