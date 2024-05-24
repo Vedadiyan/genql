@@ -510,7 +510,8 @@ func BuilFromAliasedTable(query *Query, as string, expr sqlparser.SimpleTableExp
 					if err != nil {
 						return err
 					}
-					query.from = array
+					alias := ProcessAlias(array, as)
+					query.from = alias
 					return nil
 				}
 			case nil:
