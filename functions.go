@@ -15,7 +15,10 @@ package genql
 
 import (
 	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/md5"
+	"crypto/rand"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
@@ -24,6 +27,7 @@ import (
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"math"
 	"strconv"
 	"strings"
@@ -746,6 +750,138 @@ func ArrayFunc(query *Query, current Map, functionOptions *FunctionOptions, args
 	return args, nil
 }
 
+//	Date Add Function
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |   string   |    ISO 8601 datetime      |
+// |   1   |   string   |    DAY - MONTH - YEAR     |
+// |   3   |    int     |      number to add        |
+// --------------------------------------------------
+func DateAddFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(3, args)
+	if err != nil {
+		return nil, err
+	}
+	dateRaw, err := AsType[string](args[0])
+	if err != nil {
+		return nil, err
+	}
+	date, err := time.Parse("2006-01-02T15:04:05-0700", *dateRaw)
+	if err != nil {
+		return nil, err
+	}
+	segment, err := AsType[string](args[1])
+	if err != nil {
+		return nil, err
+	}
+	nRaw, err := AsType[float64](args[2])
+	if err != nil {
+		return nil, err
+	}
+	n := int(*nRaw)
+	switch strings.ToLower(*segment) {
+	case "day":
+		{
+			return date.AddDate(0, 0, n), nil
+		}
+	case "month":
+		{
+			return date.AddDate(0, n, 0), nil
+		}
+	case "year":
+		{
+			return date.AddDate(n, 0, 0), nil
+		}
+	}
+	return nil, fmt.Errorf("unsupported operation")
+}
+
+func EncryptFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(2, args)
+	if err != nil {
+		return nil, err
+	}
+	var buffer bytes.Buffer
+	enc := gob.NewEncoder(&buffer)
+	err = enc.Encode(struct{ Data any }{Data: args[0]})
+	if err != nil {
+		return nil, err
+	}
+	key, err := AsType[string](args[1])
+	if err != nil {
+		return nil, err
+	}
+	sha := sha256.New()
+	_, err = sha.Write([]byte(*key))
+	if err != nil {
+		return nil, err
+	}
+	hash := sha.Sum(nil)
+	aes, err := aes.NewCipher(hash)
+	if err != nil {
+		return nil, err
+	}
+	gcm, err := cipher.NewGCM(aes)
+	if err != nil {
+		return nil, err
+	}
+	nonce := make([]byte, 12)
+	_, err = io.ReadFull(rand.Reader, nonce)
+	if err != nil {
+		return nil, err
+	}
+	bytes := buffer.Bytes()
+	sealed := gcm.Seal(bytes[:0], nonce, bytes, nil)
+	return base64.URLEncoding.EncodeToString(append(nonce, sealed...)), nil
+}
+
+func DecryptFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(2, args)
+	if err != nil {
+		return nil, err
+	}
+	secret, err := AsType[string](args[0])
+	if err != nil {
+		return nil, err
+	}
+	key, err := AsType[string](args[1])
+	if err != nil {
+		return nil, err
+	}
+	sha := sha256.New()
+	_, err = sha.Write([]byte(*key))
+	if err != nil {
+		return nil, err
+	}
+	hash := sha.Sum(nil)
+	aes, err := aes.NewCipher(hash)
+	if err != nil {
+		return nil, err
+	}
+	gcm, err := cipher.NewGCM(aes)
+	if err != nil {
+		return nil, err
+	}
+	secretBytes, err := base64.URLEncoding.DecodeString(*secret)
+	if err != nil {
+		return nil, err
+	}
+	sealed, err := gcm.Open(secretBytes[:0], secretBytes[:12], secretBytes[12:], nil)
+	if err != nil {
+		return nil, err
+	}
+	buffer := bytes.NewBuffer(sealed)
+	enc := gob.NewDecoder(buffer)
+	var decodedData struct{ Data any }
+	err = enc.Decode(&decodedData)
+	if err != nil {
+		return nil, err
+	}
+	return decodedData.Data, nil
+}
+
 // Timestamp Function
 func TimestampFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
 	err := Guard(0, args)
@@ -813,4 +949,5 @@ func init() {
 	RegisterFunction("decode", DecodeFunc)
 	RegisterImmediateFunction("timestamp", TimestampFunc)
 	RegisterFunction("array", ArrayFunc)
+	RegisterImmediateFunction("dateadd", DateAddFunc)
 }
