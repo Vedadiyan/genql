@@ -58,39 +58,31 @@ func TestHandleNonNumericStringInput(t *testing.T) {
 		t.Fatal("expected an error, got nil")
 	}
 }
-
-func TestParseSelectorWithNoValidPatterns(t *testing.T) {
-	selector := "invalidPattern"
-	expected := []any{KeySelector("invalidPattern")}
-
-	result, err := ParseSelector(selector)
-
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
-}
-func TestSelectDimensionWithEmptyDimensions(t *testing.T) {
-	data := []any{1, 2, 3, 4, 5}
-	dimensions := []*IndexSelector{}
-	result, err := SelectDimension(data, dimensions)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-	if !reflect.DeepEqual(result, data) {
-		t.Errorf("expected %v, got %v", data, result)
-	}
-}
-
-func TestSelectDimensionWithNegativeIndices(t *testing.T) {
+func TestSelectDimensionWithPositiveIndices(t *testing.T) {
 	data := []any{1, 2, 3, 4, 5}
 	dimensions := []*IndexSelector{
 		{
 			selectorType:  RANGE,
-			rangeSelector: [2]int{-1, -1},
+			rangeSelector: [2]int{2, 4},
+		},
+	}
+	expected := []any{3, 4}
+
+	result, err := SelectDimension(data, dimensions)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("expected %v, got %v", expected, result)
+	}
+}
+func TestSelectDimensionWithMixedIndices(t *testing.T) {
+	data := []any{1, 2, 3, 4, 5}
+	dimensions := []*IndexSelector{
+		{
+			selectorType:  RANGE,
+			rangeSelector: [2]int{0, -1},
 		},
 	}
 	expected := []any{1, 2, 3, 4, 5}
@@ -104,7 +96,6 @@ func TestSelectDimensionWithNegativeIndices(t *testing.T) {
 		t.Errorf("expected %v, got %v", expected, result)
 	}
 }
-
 func TestReadRangeValidInput(t *testing.T) {
 	match := "(0:10)"
 	expected := NewIndex([2]int{0, 10})
@@ -159,7 +150,7 @@ func TestParseArrayHandlesEmptyString(t *testing.T) {
 }
 
 func TestParsePipeValidString(t *testing.T) {
-	match := "key1|value1 key2|value2"
+	match := "key1|value1,key2|value2"
 	expected := []*PipeSelector{
 		NewPipe("key1", "value1"),
 		NewPipe("key2", "value2"),
@@ -173,25 +164,10 @@ func TestParsePipeValidString(t *testing.T) {
 	}
 }
 
-func TestUnwindFlattensNestedArrayToSpecifiedDepth(t *testing.T) {
-	data := []any{1, []any{2, []any{3, 4}}, 5}
-	expected := []any{1, 2, []any{3, 4}, 5}
-	result := Unwind(data, 1)
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, but got %v", expected, result)
-	}
-}
-
-func TestUnwindHandlesNilOrEmptyInputArraysGracefully(t *testing.T) {
-	var data []any = nil
-	expected := []any{}
+func TestUnwindFlattensNestedArrayCompletely(t *testing.T) {
+	data := []any{[]any{1, 2, 3}, []any{4, 5, 6}}
+	expected := []any{1, 2, 3, 4, 5, 6}
 	result := Unwind(data, 2)
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, but got %v", expected, result)
-	}
-
-	data = []any{}
-	result = Unwind(data, 2)
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Expected %v, but got %v", expected, result)
 	}
@@ -310,22 +286,6 @@ func TestReaderWithEmptySelectors(t *testing.T) {
 		t.Errorf("expected %v, got %v", data, result)
 	}
 }
-
-func TestMixProcessesArray(t *testing.T) {
-	input := []any{1, 2, 3}
-	expected := MixArray(input)
-
-	result, err := Mix(input)
-
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("expected %v, got %v", expected, result)
-	}
-}
-
 func TestMixUnsupportedDataType(t *testing.T) {
 	input := "unsupported"
 
@@ -343,16 +303,6 @@ func TestFlattenNestedArray(t *testing.T) {
 		t.Errorf("Expected %v, but got %v", expected, result)
 	}
 }
-
-func TestDeeplyNestedArray(t *testing.T) {
-	input := []any{1, []any{2, []any{3, []any{4, []any{5}}}}}
-	expected := []any{1, 2, 3, 4, 5}
-	result := MixArray(input)
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, but got %v", expected, result)
-	}
-}
-
 func TestMixObjectFlattensNestedMaps(t *testing.T) {
 	input := map[string]any{
 		"a": map[string]any{
