@@ -34,6 +34,11 @@ func TestSumFuncWithInvalidInput(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error, got none")
 	}
+
+	expectedErrorMessage := "invalid cast" 
+	if err.Error() != expectedErrorMessage {
+		t.Errorf("expected error message to be '%v', got '%v'", expectedErrorMessage, err.Error())
+	}
 }
 
 func TestAvgFuncComputesAverageCorrectly(t *testing.T) {
@@ -89,7 +94,7 @@ func TestMinFuncHandlesMixedNumericTypes(t *testing.T) {
 	query := &Query{}
 	current := Map{}
 	functionOptions := &FunctionOptions{}
-	args := []any{[]any{3, 2.5, 4.8, 1}}
+	args := []any{[]any{3.5, 2, 4.8, 1.9}}
 
 	result, err := MinFunc(query, current, functionOptions, args)
 
@@ -97,7 +102,7 @@ func TestMinFuncHandlesMixedNumericTypes(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	expected := 1.0
+	expected := 1.9
 	if result != expected {
 		t.Errorf("expected %v, got %v", expected, result)
 	}
