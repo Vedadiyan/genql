@@ -544,7 +544,7 @@ func RaiseWhenFunc(query *Query, current Map, functionOptions *FunctionOptions, 
 		return nil, err
 	}
 	if *cond {
-		return nil, fmt.Errorf(fmt.Sprintf("%v", args[1]))
+		return nil, fmt.Errorf("%v", args[1])
 	}
 	return Ommit(true), nil
 }
@@ -561,7 +561,7 @@ func RaiseFunc(query *Query, current Map, functionOptions *FunctionOptions, args
 	if err != nil {
 		return nil, err
 	}
-	return nil, fmt.Errorf(fmt.Sprintf("%v", args[0]))
+	return nil, fmt.Errorf("%v", args[0])
 }
 
 //	Hash Function

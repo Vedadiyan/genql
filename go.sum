@@ -5,10 +5,8 @@ github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
 github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
 github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
-github.com/vedadiyan/sqlparser v1.0.0 h1:ST++TYQf4WYFDZs4iIABHJiUAts1YV2HH3GCLv8IwJQ=
-github.com/vedadiyan/sqlparser v1.0.0/go.mod h1:bXhSdIPIU5uN9q2zsk/7gB436SiX6B5mm+049VVWJCY=
-github.com/vedadiyan/sqlparser v1.0.1-0.20241017065548-853e50bdb50d h1:GC3jdAyPWX6eKRebU88VPmvFepB4CuqifIPUhwtCxbk=
-github.com/vedadiyan/sqlparser v1.0.1-0.20241017065548-853e50bdb50d/go.mod h1:CclQsbBkSupCGkAr4jnUH4KhKIjdRxk03VQcekGzbuc=
+github.com/vedadiyan/sqlparser v1.0.1 h1:3GS8HpxwheweAt1cKp8wS1sNchXRukzrTbEHHxaGMHU=
+github.com/vedadiyan/sqlparser v1.0.1/go.mod h1:CclQsbBkSupCGkAr4jnUH4KhKIjdRxk03VQcekGzbuc=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 google.golang.org/protobuf v1.26.0-rc.1/go.mod h1:jlhhOSvTdKEhbULTjvd4ARK9grFBp09yW+WbY/TyQbw=
 google.golang.org/protobuf v1.28.1 h1:d0NfwRgPtno5B1Wa6L2DAG+KivqkdutMf1UhdNx175w=

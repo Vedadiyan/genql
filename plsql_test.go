@@ -3,7 +3,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,315 +14,699 @@
 package genql
 
 import (
-	"encoding/json"
-	"fmt"
+	"reflect"
 	"testing"
+
+	"github.com/vedadiyan/sqlparser/pkg/sqlparser"
 )
 
-const _DATASOURCE = `{"data":[{"id":1,"full_name":"Pouya Vedadiyan","email":"vedadiyan@genql.com","profile":{"height":170,"hair":"black"},"likes":[{"type":"game","name":"doom","versions":[1994,1998]},{"type":"game","name":"prince of persia","versions":[1992]},{"type":"movie","name":"star wars","episodes":[1,2,3]}],"technologies":[[{"name":"C","expertiese":"MAX"},{"name":"GO","expertiese":"MAX"}],[{"name":"linux","expertiese":"high"},{"name":"unix","expertiese":"high"}]]},{"id":2,"full_name":"imaginary friend","email": null,"profile":{"height":180,"hair":"blond"},"likes":[{"type":"game","name":"doom","versions":[1994,1998]},{"type":"game","name":"need for speed","versions":[2023]},{"type":"movie","name":"mission impossible","episodes":[1,2,3]}],"technologies":[[{"name":"java","expertiese":"MAX"},{"name":"rust","expertiese":"MAX"}],[{"name":"sql","expertiese":"high"},{"name":"redis","expertiese":"high"}]]}]}`
-
-func ReadDataSource() (map[string]any, error) {
-	mapper := make(map[string]any)
-	err := json.Unmarshal([]byte(_DATASOURCE), &mapper)
-	return mapper, err
-}
-
-func Tester(cmd string, expected string, t *testing.T) {
-	dataSource, err := ReadDataSource()
-	if err != nil {
-		t.Log("failed to read initial data source")
-		t.FailNow()
+func TestNew(t *testing.T) {
+	tests := []struct {
+		name      string
+		data      Map
+		query     string
+		options   []QueryOption
+		wantErr   bool
+		checkFunc func(*Query) bool
+	}{
+		{
+			name: "Basic Query Creation",
+			data: Map{
+				"test": []Map{
+					{"id": 1, "name": "test1"},
+					{"id": 2, "name": "test2"},
+				},
+			},
+			query:   "SELECT * FROM test",
+			options: nil,
+			wantErr: false,
+			checkFunc: func(q *Query) bool {
+				data := q.data["test"]
+				if data == nil {
+					return false
+				}
+				testData, ok := data.([]Map)
+				return q != nil && ok && len(testData) == 2 && testData[0]["id"] == 1
+			},
+		},
+		{
+			name: "With Wrapped Option",
+			data: Map{
+				"test": []Map{
+					{"id": 1, "name": "test1"},
+					{"id": 2, "name": "test2"},
+				},
+			},
+			query:   "SELECT * FROM test",
+			options: []QueryOption{Wrapped()},
+			wantErr: false,
+			checkFunc: func(q *Query) bool {
+				root, ok := q.data["root"].(Map)
+				if !ok {
+					return false
+				}
+				testData, ok := root["test"].([]Map)
+				return q != nil && q.options.wrapped && ok && len(testData) == 2 && testData[0]["id"] == 1
+			},
+		},
+		{
+			name: "With Postgres Dialect",
+			data: Map{
+				"test": []Map{
+					{"id": 1, "name": "test1"},
+					{"id": 2, "name": "test2"},
+				},
+			},
+			query:   `SELECT * FROM "test"`,
+			options: []QueryOption{PostgresEscapingDialect()},
+			wantErr: false,
+			checkFunc: func(q *Query) bool {
+				data := q.data["test"]
+				if data == nil {
+					return false
+				}
+				testData, ok := data.([]Map)
+				return q != nil && q.options.postgresEscapingDialect && ok && len(testData) == 2
+			},
+		},
+		{
+			name: "Invalid SQL Query",
+			data: Map{
+				"test": []Map{
+					{"id": 1, "name": "test1"},
+				},
+			},
+			query:     "INVALID SQL",
+			options:   nil,
+			wantErr:   true,
+			checkFunc: nil,
+		},
 	}
-	query, err := New(dataSource, cmd, Wrapped(), PostgresEscapingDialect())
-	if err != nil {
-		t.Log(err)
-		t.FailNow()
-	}
-	rs, err := query.Exec()
-	v := fmt.Sprintf("%v", rs)
-	_ = v
-	if err != nil {
-		t.Log(err)
-		t.FailNow()
-	}
-	if len(rs) == 0 {
-		t.Log("test failed. the output array is empty")
-		t.FailNow()
-	}
-	if fmt.Sprintf("%v", rs) != expected {
-		t.FailNow()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			query, err := New(tt.data, tt.query, tt.options...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !tt.checkFunc(query) {
+				t.Errorf("New() failed validation check")
+			}
+		})
 	}
 }
-
-func TestSelectStar(t *testing.T) {
-	dataSource, err := ReadDataSource()
-	if err != nil {
-		t.Log("failed to read initial data source")
-		t.FailNow()
+func TestQueryOptions(t *testing.T) {
+	tests := []struct {
+		name  string
+		opt   QueryOption
+		check func(*Query) bool
+	}{
+		{
+			name: "Wrapped Option",
+			opt:  Wrapped(),
+			check: func(q *Query) bool {
+				return q.options.wrapped
+			},
+		},
+		{
+			name: "Postgres Dialect Option",
+			opt:  PostgresEscapingDialect(),
+			check: func(q *Query) bool {
+				return q.options.postgresEscapingDialect
+			},
+		},
+		{
+			name: "Idiomatic Arrays Option",
+			opt:  IdomaticArrays(),
+			check: func(q *Query) bool {
+				return q.options.idomaticArrays
+			},
+		},
+		{
+			name: "With Constants Option",
+			opt:  WithConstants(map[string]any{"const": "value"}),
+			check: func(q *Query) bool {
+				return q.options.constants["const"] == "value"
+			},
+		},
 	}
-	cmd := `SELECT * FROM "root.data"`
-	Tester(cmd, fmt.Sprintf("%v", dataSource["data"]), t)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q := &Query{options: &Options{}}
+			tt.opt(q)
+			if !tt.check(q) {
+				t.Errorf("Option %s failed to set correct value", tt.name)
+			}
+		})
+	}
 }
 
-func TestSelect(t *testing.T) {
-	expected := "[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3] map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]"
-	cmd := `SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes FROM "root.data"`
-	Tester(cmd, expected, t)
+func TestExecSelect(t *testing.T) {
+	tests := []struct {
+		name    string
+		query   *Query
+		input   []any
+		want    []any
+		wantErr bool
+	}{
+		{
+			name: "Select All Fields",
+			query: &Query{
+				selectDefinition: sqlparser.SelectExprs{
+					&sqlparser.StarExpr{},
+				},
+			},
+			input: []any{
+				Map{"id": 1, "name": "test"},
+			},
+			want: []any{
+				Map{"id": 1, "name": "test"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Select Specific Fields",
+			query: &Query{
+				selectDefinition: sqlparser.SelectExprs{
+					&sqlparser.AliasedExpr{
+						Expr: &sqlparser.ColName{Name: sqlparser.NewIdentifierCI("id")},
+					},
+				},
+			},
+			input: []any{
+				Map{"id": 1, "name": "test"},
+			},
+			want: []any{
+				Map{"id": 1},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ExecSelect(tt.query, tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ExecSelect() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ExecSelect() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
-func TestCte(t *testing.T) {
-	expected := "[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3] map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]"
-	cmd := `WITH Main AS (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes FROM "root.data") SELECT * FROM Main`
-	Tester(cmd, expected, t)
+func TestExecOrderBy(t *testing.T) {
+	tests := []struct {
+		name    string
+		query   *Query
+		input   []any
+		want    []any
+		wantErr bool
+	}{
+		{
+			name: "Order By Single Field Ascending",
+			query: &Query{
+				orderByDefinition: []struct {
+					Key   string
+					Value bool
+				}{
+					{Key: "id", Value: true},
+				},
+			},
+			input: []any{
+				Map{"id": 2.0},
+				Map{"id": 1.0},
+				Map{"id": 3.0},
+			},
+			want: []any{
+				Map{"id": 1.0},
+				Map{"id": 2.0},
+				Map{"id": 3.0},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Order By Single Field Descending",
+			query: &Query{
+				orderByDefinition: []struct {
+					Key   string
+					Value bool
+				}{
+					{Key: "id", Value: false},
+				},
+			},
+			input: []any{
+				Map{"id": 2.0},
+				Map{"id": 1.0},
+				Map{"id": 3.0},
+			},
+			want: []any{
+				Map{"id": 3.0},
+				Map{"id": 2.0},
+				Map{"id": 1.0},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ExecOrderBy(tt.query, tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ExecOrderBy() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ExecOrderBy() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
-func TestCteWithIndexSelector(t *testing.T) {
-	expected := "[map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]"
-	cmd := `WITH Main AS (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes FROM "root.data") SELECT * FROM "Main[0]"`
-	Tester(cmd, expected, t)
+func TestExecWhere(t *testing.T) {
+	tests := []struct {
+		name    string
+		query   *Query
+		current Map
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "Simple Equality Check",
+			query: &Query{
+				whereDefinition: &sqlparser.Where{
+					Type: sqlparser.WhereClause,
+					Expr: &sqlparser.ComparisonExpr{
+						Left:     &sqlparser.ColName{Name: sqlparser.NewIdentifierCI("id")},
+						Right:    sqlparser.NewIntLiteral("1"),
+						Operator: sqlparser.EqualOp,
+					},
+				},
+			},
+			current: Map{"id": 1},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "Complex AND Condition",
+			query: &Query{
+				whereDefinition: &sqlparser.Where{
+					Type: sqlparser.WhereClause,
+					Expr: &sqlparser.AndExpr{
+						Left: &sqlparser.ComparisonExpr{
+							Left:     &sqlparser.ColName{Name: sqlparser.NewIdentifierCI("id")},
+							Right:    sqlparser.NewIntLiteral("1"),
+							Operator: sqlparser.EqualOp,
+						},
+						Right: &sqlparser.ComparisonExpr{
+							Left:     &sqlparser.ColName{Name: sqlparser.NewIdentifierCI("active")},
+							Right:    sqlparser.BoolVal(true),
+							Operator: sqlparser.EqualOp,
+						},
+					},
+				},
+			},
+			current: Map{"id": 1, "active": true},
+			want:    true,
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ExecWhere(tt.query, tt.current)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ExecWhere() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && got != tt.want {
+				t.Errorf("ExecWhere() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
-func TestCteWithKeySelector(t *testing.T) {
-	expected := "[[map[name:doom type:game versions:[1994 1998]] map[name:prince of persia type:game versions:[1992]] map[episodes:[1 2 3] name:star wars type:movie]] [map[name:doom type:game versions:[1994 1998]] map[name:need for speed type:game versions:[2023]] map[episodes:[1 2 3] name:mission impossible type:movie]]]"
-	cmd := `WITH Main AS (SELECT likes FROM "root.data") SELECT * FROM Main.likes`
-	Tester(cmd, expected, t)
+func TestExecGroupBy(t *testing.T) {
+	tests := []struct {
+		name    string
+		query   *Query
+		input   []any
+		want    []any
+		wantErr bool
+	}{
+		{
+			name: "Group By Single Field",
+			query: &Query{
+				groupDefinition: GroupDefinition{
+					"category": true,
+				},
+			},
+			input: []any{
+				Map{"category": "A", "value": 1},
+				Map{"category": "A", "value": 2},
+				Map{"category": "B", "value": 3},
+			},
+			want: []any{
+				Map{
+					"category": "A",
+					"*": []any{
+						Map{"category": "A", "value": 1},
+						Map{"category": "A", "value": 2},
+					},
+				},
+				Map{
+					"category": "B",
+					"*": []any{
+						Map{"category": "B", "value": 3},
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ExecGroupBy(tt.query, tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ExecGroupBy() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ExecGroupBy() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
-func TestCteWithPipeSelector(t *testing.T) {
-	expected := "[[map[name:doom] map[name:prince of persia] map[name:star wars]] [map[name:doom] map[name:need for speed] map[name:mission impossible]]]"
-	cmd := `WITH Main AS (SELECT likes FROM "root.data") SELECT * FROM "Main.likes{name}"`
-	Tester(cmd, expected, t)
-}
-func TestCteWithDimensionSelector(t *testing.T) {
-	expected := "[map[expertiese:MAX name:GO] map[expertiese:MAX name:rust]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT * FROM "Main.technologies[0:1]"`
-	Tester(cmd, expected, t)
+func TestQuery_Exec(t *testing.T) {
+	tests := []struct {
+		name    string
+		query   string
+		data    Map
+		want    []any
+		wantErr bool
+	}{
+		{
+			name:  "Simple Select All",
+			query: "SELECT * FROM users",
+			data: Map{
+				"users": []any{
+					Map{"id": 1, "name": "John"},
+					Map{"id": 2, "name": "Jane"},
+				},
+			},
+			want: []any{
+				Map{"id": 1, "name": "John"},
+				Map{"id": 2, "name": "Jane"},
+			},
+			wantErr: false,
+		},
+		{
+			name:  "Select With Where Clause",
+			query: "SELECT * FROM users WHERE id = 1",
+			data: Map{
+				"users": []any{
+					Map{"id": 1, "name": "John"},
+					Map{"id": 2, "name": "Jane"},
+				},
+			},
+			want: []any{
+				Map{"id": 1, "name": "John"},
+			},
+			wantErr: false,
+		},
+		{
+			name:  "Select With Order By",
+			query: "SELECT * FROM users ORDER BY id DESC",
+			data: Map{
+				"users": []any{
+					Map{"id": 1.0, "name": "John"},
+					Map{"id": 2.0, "name": "Jane"},
+				},
+			},
+			want: []any{
+				Map{"id": 2.0, "name": "Jane"},
+				Map{"id": 1.0, "name": "John"},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q, err := New(tt.data, tt.query)
+			if err != nil {
+				t.Fatalf("Failed to create query: %v", err)
+			}
+
+			got, err := q.Exec()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Query.Exec() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Query.Exec() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
-func TestSubQuery(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main`
-	Tester(cmd, expected, t)
+func TestBuildCte(t *testing.T) {
+	tests := []struct {
+		name    string
+		query   string
+		data    Map
+		wantErr bool
+	}{
+		{
+			name:  "Simple CTE",
+			query: `WITH temp AS (SELECT * FROM test WHERE id = 1) SELECT * FROM temp`,
+			data: Map{
+				"test": []Map{
+					{"id": 1, "name": "test1"},
+					{"id": 2, "name": "test2"},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Multiple CTEs",
+			query: `
+				WITH temp1 AS (SELECT * FROM test WHERE id = 1),
+				     temp2 AS (SELECT * FROM test WHERE id = 2)
+				SELECT * FROM temp1 UNION SELECT * FROM temp2`,
+			data: Map{
+				"test": []Map{
+					{"id": 1, "name": "test1"},
+					{"id": 2, "name": "test2"},
+				},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q, err := New(tt.data, tt.query, PostgresEscapingDialect())
+			if (err != nil) != tt.wantErr {
+				t.Errorf("BuildCte() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr {
+				result, err := q.Exec()
+				if err != nil {
+					t.Errorf("Exec() error = %v", err)
+				}
+				if result == nil {
+					t.Error("Expected non-nil result")
+				}
+			}
+		})
+	}
 }
 
-func TestWhere(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id = 1`
-	Tester(cmd, expected, t)
+func TestBuildJoin(t *testing.T) {
+	tests := []struct {
+		name    string
+		query   string
+		data    Map
+		want    []Map
+		wantErr bool
+	}{
+		{
+			name: "Inner Join",
+			query: `SELECT u.*, o.amount 
+					FROM users u 
+					JOIN orders o ON u.id = o.user_id`,
+			data: Map{
+				"users": []Map{
+					{"id": 1, "name": "user1"},
+					{"id": 2, "name": "user2"},
+				},
+				"orders": []Map{
+					{"id": 1, "user_id": 1, "amount": 100},
+					{"id": 2, "user_id": 1, "amount": 200},
+				},
+			},
+			want: []Map{
+				{"id": 1, "name": "user1", "amount": 100},
+				{"id": 1, "name": "user1", "amount": 200},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Left Join",
+			query: `SELECT u.*, o.amount 
+					FROM users u 
+					LEFT JOIN orders o ON u.id = o.user_id`,
+			data: Map{
+				"users": []Map{
+					{"id": 1, "name": "user1"},
+					{"id": 2, "name": "user2"},
+				},
+				"orders": []Map{
+					{"id": 1, "user_id": 1, "amount": 100},
+				},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q, err := New(tt.data, tt.query)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("BuildJoin() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr {
+				result, err := q.Exec()
+				if err != nil {
+					t.Errorf("Exec() error = %v", err)
+				}
+				if result == nil {
+					t.Error("Expected non-nil result")
+				}
+			}
+		})
+	}
 }
 
-func TestBinaryAnd(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id = 1 AND full_name = 'Pouya Vedadiyan'`
-	Tester(cmd, expected, t)
+func TestAggregations(t *testing.T) {
+	tests := []struct {
+		name    string
+		query   string
+		data    Map
+		want    []Map
+		wantErr bool
+	}{
+		{
+			name: "Count with Group By",
+			query: `SELECT category, COUNT(*) as count 
+					FROM test 
+					GROUP BY category`,
+			data: Map{
+				"test": []Map{
+					{"category": "A", "value": 1},
+					{"category": "A", "value": 2},
+					{"category": "B", "value": 3},
+				},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q, err := New(tt.data, tt.query, PostgresEscapingDialect())
+			if (err != nil) != tt.wantErr {
+				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr {
+				result, err := q.Exec()
+				if err != nil {
+					t.Errorf("Exec() error = %v", err)
+				}
+				if result == nil {
+					t.Error("Expected non-nil result")
+				}
+			}
+		})
+	}
 }
 
-func TestBinaryOr(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id = 1 OR full_name = 'imaginary friend'`
-	Tester(cmd, expected, t)
-}
+func TestExpressions(t *testing.T) {
+	tests := []struct {
+		name    string
+		query   string
+		data    Map
+		wantErr bool
+	}{
+		{
+			name: "CASE Expression",
+			query: `SELECT id, 
+					CASE 
+						WHEN value > 2 THEN 'High'
+						ELSE 'Low'
+					END as category
+					FROM test`,
+			data: Map{
+				"test": []Map{
+					{"id": 1, "value": 1.0},
+					{"id": 2, "value": 3.0},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Complex WHERE with AND/OR",
+			query: `SELECT * FROM test 
+					WHERE (value > 1 AND value < 4) 
+					OR category = 'A'`,
+			data: Map{
+				"test": []Map{
+					{"id": 1, "value": 2.0, "category": "B"},
+					{"id": 2, "value": 5.0, "category": "A"},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Mathematical Expressions",
+			query: `SELECT id, value * 2 as doubled,
+					value + 1 as increased
+					FROM test`,
+			data: Map{
+				"test": []Map{
+					{"id": 1, "value": 10.0},
+					{"id": 2, "value": 20.0},
+				},
+			},
+			wantErr: false,
+		},
+	}
 
-func TestBinaryMinus(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id = 2-1 OR full_name = 'imaginary friend'`
-	Tester(cmd, expected, t)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q, err := New(tt.data, tt.query)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr {
+				result, err := q.Exec()
+				if err != nil {
+					t.Errorf("Exec() error = %v", err)
+				}
+				if result == nil {
+					t.Error("Expected non-nil result")
+				}
+			}
+		})
+	}
 }
-
-func TestBinaryPlus(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id = 1+1-1 OR full_name = 'imaginary friend'`
-	Tester(cmd, expected, t)
-}
-
-func TestBinaryMultiply(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id = 1*1 OR full_name = 'imaginary friend'`
-	Tester(cmd, expected, t)
-}
-
-func TestBinaryDivide(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id = 1/1 OR full_name = 'imaginary friend'`
-	Tester(cmd, expected, t)
-}
-
-func TestIs(t *testing.T) {
-	expected := "[map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where email IS NULL`
-	Tester(cmd, expected, t)
-}
-
-func TestIsNot(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id IS NOT NULL`
-	Tester(cmd, expected, t)
-}
-
-func TestIn(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id IN (1,2)`
-	Tester(cmd, expected, t)
-}
-
-func TestNotIn(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id NOT IN (10,20)`
-	Tester(cmd, expected, t)
-}
-
-func TestGt(t *testing.T) {
-	expected := "[map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where profile.height > 170`
-	Tester(cmd, expected, t)
-}
-
-func TestGte(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where profile.height >= 170`
-	Tester(cmd, expected, t)
-}
-
-func TestLt(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where profile.height < 180`
-	Tester(cmd, expected, t)
-}
-
-func TestLte(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where profile.height <= 180`
-	Tester(cmd, expected, t)
-}
-
-func TestBetween(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where profile.height BETWEEN 169 AND 181`
-	Tester(cmd, expected, t)
-}
-
-func TestNotBetween(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]] map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where profile.height NOT BETWEEN 181 AND 191`
-	Tester(cmd, expected, t)
-}
-
-func TestLike(t *testing.T) {
-	expected := "[map[data:map[full_name:Pouya Vedadiyan harcoded_value:HARD CODED id:1 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where email LIKE '%@%'`
-	Tester(cmd, expected, t)
-}
-
-func TestNotLike(t *testing.T) {
-	expected := "[map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where email NOT LIKE '%@%'`
-	Tester(cmd, expected, t)
-}
-
-func TestNotEqual(t *testing.T) {
-	expected := "[map[data:map[full_name:imaginary friend harcoded_value:HARD CODED id:2 liked:doom total_likes:3]]]"
-	cmd := `WITH Main AS (SELECT * FROM "root.data") SELECT (SELECT id, full_name, 'HARD CODED' AS harcoded_value, "likes[0].name" AS liked, SCOPED.COUNT(likes) AS total_likes) AS data FROM Main where id != 1`
-	Tester(cmd, expected, t)
-}
-func TestSubString(t *testing.T) {
-	expected := "[map[OK:Sub]]"
-	cmd := `SELECT SUBSTRING('Test Substring Function', 5, 3) AS OK FROM "root.data" LIMIT 1`
-	Tester(cmd, expected, t)
-}
-
-func TestUnary(t *testing.T) {
-	expected := "[map[OK:false]]"
-	cmd := `SELECT !TRUE AS OK FROM "root.data" LIMIT 1`
-	Tester(cmd, expected, t)
-}
-
-func TestLimit(t *testing.T) {
-	expected := "[map[id:1]]"
-	cmd := `SELECT id FROM "root.data" LIMIT 1 `
-	Tester(cmd, expected, t)
-}
-
-func TestOffset(t *testing.T) {
-	expected := "[map[id:2]]"
-	cmd := `SELECT id FROM "root.data" LIMIT 1 OFFSET 1 `
-	Tester(cmd, expected, t)
-}
-
-func TestOrderByDesc(t *testing.T) {
-	expected := "[map[episodes:[1 2 3] name:star wars type:movie] map[episodes:[1 2 3] name:mission impossible type:movie] map[name:prince of persia type:game versions:[1992]] map[name:need for speed type:game versions:[2023]] map[name:doom type:game versions:[1994 1998]] map[name:doom type:game versions:[1994 1998]]]"
-	cmd := `SELECT * FROM "mix=>root.data.likes" ORDER BY type desc, name desc`
-	Tester(cmd, expected, t)
-}
-
-func TestOrderByAcs(t *testing.T) {
-	expected := "[map[episodes:[1 2 3] name:mission impossible type:movie] map[episodes:[1 2 3] name:star wars type:movie] map[name:doom type:game versions:[1994 1998]] map[name:doom type:game versions:[1994 1998]] map[name:need for speed type:game versions:[2023]] map[name:prince of persia type:game versions:[1992]]]"
-	cmd := `SELECT * FROM "mix=>root.data.likes" ORDER BY type desc, name asc`
-	Tester(cmd, expected, t)
-}
-
-func TestGroupBy(t *testing.T) {
-	expected := "[map[type:game] map[type:movie]]"
-	cmd := `SELECT type FROM "mix=>root.data.likes" GROUP BY type ORDER BY type`
-	Tester(cmd, expected, t)
-}
-
-func TestAggregatedFunction(t *testing.T) {
-	expected := "[map[number:2] map[number:2]]"
-	cmd := `SELECT COUNT(type) AS number FROM "mix=>root.data.likes" GROUP BY type`
-	Tester(cmd, expected, t)
-}
-
-func TestDistinct(t *testing.T) {
-	expected := "[map[name:doom type:game versions:[1994 1998]] map[name:prince of persia type:game versions:[1992]] map[episodes:[1 2 3] name:star wars type:movie] map[name:need for speed type:game versions:[2023]] map[episodes:[1 2 3] name:mission impossible type:movie]]"
-	cmd := `SELECT DISTINCT * FROM "mix=>root.data.likes"`
-	Tester(cmd, expected, t)
-}
-
-func TestInnerJoin(t *testing.T) {
-	expected := "[map[A_full_name:Pouya Vedadiyan B_full_name:Pouya Vedadiyan] map[A_full_name:imaginary friend B_full_name:imaginary friend]]"
-	cmd := `SELECT A.full_name AS A_full_name , B.full_name AS B_full_name FROM root.data A JOIN root.data B on A.id = B.id`
-	Tester(cmd, expected, t)
-}
-
-func TestLeftJoin(t *testing.T) {
-	expected := "[map[A_name:doom B_name:<nil>] map[A_name:prince of persia B_name:<nil>] map[A_name:star wars B_name:<nil>] map[A_name:doom B_name:<nil>] map[A_name:need for speed B_name:<nil>] map[A_name:mission impossible B_name:<nil>]]"
-	cmd := `SELECT A.name AS A_name, B.name AS B_name FROM "mix=>root.data.likes" A LEFT JOIN "mix=>root.data.technologies" B on A.name = B.name`
-	Tester(cmd, expected, t)
-}
-
-func TestRightJoin(t *testing.T) {
-	expected := "[map[A_name:<nil> B_name:C] map[A_name:<nil> B_name:GO] map[A_name:<nil> B_name:linux] map[A_name:<nil> B_name:unix] map[A_name:<nil> B_name:java] map[A_name:<nil> B_name:rust] map[A_name:<nil> B_name:sql] map[A_name:<nil> B_name:redis]]"
-	cmd := `SELECT A.name AS A_name, B.name AS B_name FROM "mix=>root.data.likes" A RIGHT JOIN "mix=>root.data.technologies" B on A.name = B.name`
-	Tester(cmd, expected, t)
-}
-
-func TestFuse(t *testing.T) {
-	expected := "[map[id:1 test.hair:black test.height:170] map[id:2 test.hair:blond test.height:180]]"
-	cmd := `SELECT id, FUSE(profile) AS test FROM "root.data"`
-	Tester(cmd, expected, t)
-}
-
-// func TestAsync(t *testing.T) {
-// 	RegisterFunction("test", func(*Query, Map, *FunctionOptions, []any) (any, error) {
-// 		<-time.After(time.Second * 5)
-// 		return 1, nil
-// 	})
-// 	RegisterFunction("test2", func(_ *Query, _ Map, _ *FunctionOptions, a []any) (any, error) {
-// 		return a[0], nil
-// 	})
-// 	expected := "[map[id:1 test.hair:black test.height:170] map[id:2 test.hair:blond test.height:180]]"
-// 	cmd := `SELECT (SELECT async.test2(await("A.test")) FROM (SELECT async.test() AS test) AS A) AS test FROM "root.data"`
-// 	Tester(cmd, expected, t)
-// }
-
-// func TestSelect1(t *testing.T) {
-// 	expected := "[map[id:1 test.hair:black test.height:170] map[id:2 test.hair:blond test.height:180]]"
-// 	cmd := `
-// 	WITH Query AS (
-// 		SELECT CHANGETYPE((SELECT 1 AS id), 'ARRAY') AS Data
-// 	)
-// 	SELECT * FROM "root.data" AS MAIN
-// 	JOIN "Query.Data" T ON MAIN.id = T.id
-// 	`
-// 	Tester(cmd, expected, t)
-// }

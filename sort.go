@@ -58,7 +58,7 @@ func Compare(slice []any, i int, j int, orderBy OrderByDefinition) (bool, error)
 		return true, nil
 	}
 	switch first.(type) {
-	case float64:
+	case int, int16, int32, int64, int8, float32, float64, byte:
 		{
 			firstValue, ok := first.(float64)
 			if !ok {
