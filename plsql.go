@@ -247,7 +247,11 @@ func BuildSelect(query *Query, slct *sqlparser.Select) error {
 }
 
 func BuildUnion(query *Query, expr *sqlparser.Union) error {
-	left, err := Prepare(query.data, expr.Left, query.options)
+	leftStatement := expr.Left.(*sqlparser.Select)
+	leftStatement.With = expr.With
+	rightStatement := expr.Right.(*sqlparser.Select)
+	rightStatement.With = expr.With
+	left, err := Prepare(query.data, leftStatement, query.options)
 	if err != nil {
 		return err
 	}
@@ -255,7 +259,7 @@ func BuildUnion(query *Query, expr *sqlparser.Union) error {
 	if err != nil {
 		return err
 	}
-	right, err := Prepare(query.data, expr.Right, query.options)
+	right, err := Prepare(query.data, rightStatement, query.options)
 	if err != nil {
 		return err
 	}
@@ -271,6 +275,7 @@ func BuildUnion(query *Query, expr *sqlparser.Union) error {
 	if err != nil {
 		return err
 	}
+
 	slice := make([]any, 0)
 	slice = append(slice, leftDataArray...)
 	slice = append(slice, rightDataArray...)
@@ -1607,31 +1612,31 @@ func ExecGroupBy(query *Query, current []any) ([]any, error) {
 			current[innerKey] = innerValue
 		}
 		current["*"] = item
-		rs, err := ExecHaving(query, current)
-		if err != nil {
-			return nil, err
-		}
-		if rs {
-			slice = append(slice, current)
-		}
+		// rs, err := ExecHaving(query, current)
+		// if err != nil {
+		// 	return nil, err
+		// }
+		// if rs {
+		// }
+		slice = append(slice, current)
 	}
 	return slice, nil
 }
 
-func ExecHaving(query *Query, current Map) (bool, error) {
-	if query.havingDefinition != nil {
-		rs, err := Expr(query, current, query.havingDefinition.Expr, nil)
-		if err != nil {
-			return false, err
-		}
-		result, ok := rs.(bool)
-		if !ok {
-			return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to build `HAVING` expression. expected a boolean but found %T", result))
-		}
-		return result, nil
-	}
-	return true, nil
-}
+// func ExecHaving(query *Query, current Map) (bool, error) {
+// 	if query.havingDefinition != nil {
+// 		rs, err := Expr(query, current, query.havingDefinition.Expr, nil)
+// 		if err != nil {
+// 			return false, err
+// 		}
+// 		result, ok := rs.(bool)
+// 		if !ok {
+// 			return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to build `HAVING` expression. expected a boolean but found %T", result))
+// 		}
+// 		return result, nil
+// 	}
+// 	return true, nil
+// }
 
 func ExecSelect(query *Query, current []any) ([]any, error) {
 	copy := make([]any, 0)
