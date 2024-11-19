@@ -913,7 +913,7 @@ func BinaryExpr(query *Query, current Map, expr *sqlparser.BinaryExpr) (*float64
 	if err != nil {
 		return nil, err
 	}
-	if leftValueRaw == nil {
+	if rightValueRaw == nil {
 		return nil, EXPECTATION_FAILED.Extend("failed to build `BINARY` expreesion. right side value is nil")
 	}
 	rightValue, err := AsType[float64](rightValueRaw)
