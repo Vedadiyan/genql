@@ -152,7 +152,15 @@ func MaxFunc(query *Query, current Map, functionOptions *FunctionOptions, args [
 // --------------------------------------------------
 func CountFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
 	if len(args) == 0 {
-		return len(query.processed), nil
+		all, ok := current["*"]
+		if !ok {
+			return len(query.from), nil
+		}
+		slice, ok := all.([]any)
+		if !ok {
+			return nil, fmt.Errorf("bad result set")
+		}
+		return len(slice), nil
 	}
 	slice, err := AsType[[]any](args[0])
 	if err != nil {

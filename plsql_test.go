@@ -606,12 +606,27 @@ func TestAggregations(t *testing.T) {
 	}{
 		{
 			name: "Count with Group By",
-			query: `SELECT category, COUNT(*) as count 
-					FROM test 
+			query: `SELECT category, count(*) as count
+					FROM test
 					GROUP BY category`,
 			data: Map{
 				"test": []Map{
 					{"category": "A", "value": 1},
+					{"category": "A", "value": 2},
+					{"category": "B", "value": 3},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Sum with Having",
+			query: `SELECT category, SUM(value) as count
+					FROM test
+					GROUP BY category
+					HAVING SUM(value) > 2`,
+			data: Map{
+				"test": []Map{
+					{"category": "A", "value": 10},
 					{"category": "A", "value": 2},
 					{"category": "B", "value": 3},
 				},

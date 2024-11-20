@@ -228,20 +228,20 @@ func TestCountFunc(t *testing.T) {
 	}{
 		{
 			name:            "With Empty Args",
-			query:           &Query{processed: []any{1, 2, 3}},
+			query:           &Query{},
 			current:         Map{},
 			functionOptions: &FunctionOptions{},
-			args:            []any{},
+			args:            []any{[]any{1.0, 2.0, 3.0}},
 			want:            3,
 			expectErr:       false,
 		},
 		{
 			name:            "Empty Processed List",
-			query:           &Query{processed: []any{}},
-			current:         Map{},
+			query:           &Query{},
+			current:         Map{"*": []any{1.0, 2.0, 3.0}},
 			functionOptions: &FunctionOptions{},
-			args:            []any{[]any{}},
-			want:            0,
+			args:            []any{},
+			want:            3,
 			expectErr:       false,
 		},
 	}
