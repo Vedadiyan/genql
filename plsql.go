@@ -771,28 +771,31 @@ func ComparisonExpr(query *Query, current Map, expr *sqlparser.ComparisonExpr) (
 	}
 	rightValue := fmt.Sprintf("%v", rightValueRaw)
 
-	equalize := func(a, b *string) {
-		la := len(*a)
-		lb := len(*b)
-		if la == lb {
-			return
+	_, isLeftStr := leftValueRaw.(string)
+	_, isRightStr := rightValueRaw.(string)
+
+	if !isLeftStr || !isRightStr {
+		equalize := func(a, b *string) {
+			la := len(*a)
+			lb := len(*b)
+			if la == lb {
+				return
+			}
+
+			if lb > la {
+				la, lb = lb, la
+				a, b = b, a
+				_ = a
+				_ = b
+			}
+
+			for i := 0; i < la-lb; i++ {
+				*b = "0" + *b
+			}
 		}
 
-		if lb > la {
-			la, lb = lb, la
-			a, b = b, a
-			_ = a
-			_ = b
-		}
-
-		for i := 0; i < la-lb; i++ {
-			*b = "0" + *b
-		}
+		equalize(&leftValue, &rightValue)
 	}
-
-	// Bad Idea needs to be fixed
-	equalize(&leftValue, &rightValue)
-
 	switch expr.Operator {
 	case sqlparser.EqualOp:
 		{
