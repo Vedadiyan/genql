@@ -790,6 +790,7 @@ func ComparisonExpr(query *Query, current Map, expr *sqlparser.ComparisonExpr) (
 		}
 	}
 
+	// Bad Idea needs to be fixed
 	equalize(&leftValue, &rightValue)
 
 	switch expr.Operator {
