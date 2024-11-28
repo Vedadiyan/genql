@@ -145,7 +145,7 @@ Structured Query Language (SQL) serves as the common standard for database query
 - ⭕ Cross Apply (MySQL limitation)
 - ✅ Unions
 - ✅ CTEs
-- ❌ Having
+- ✅ Having
 - ✅ Order By
 
 While GenQL specializes in non-relational data, it adopts much of ANSI SQL syntax and capabilities for querying, joining, filtering, and shaping heterogeneous data collections. Familiarity with essential SQL semantics paves the way for effectively composing GenQL queries.
@@ -162,6 +162,7 @@ While GenQL specializes in non-relational data, it adopts much of ANSI SQL synta
         ]
         [WHERE where_condition]  -- Optional: Filters rows based on specified conditions
         [GROUP BY {col_name} [, col_name ...] ]  -- Optional: Groups rows based on specified columns
+        [HAVING where_condition]  -- Optional: Filters groups based on specified conditions
         [ORDER BY {col_name} [ASC | DESC] [, col_name ...] ]  -- Optional: Sorts results based on specified columns
         [LIMIT {[offset,] row_count | row_count OFFSET offset}]  -- Optional: Limits the number of returned rows
         [UNION [ALL] select_statement]  -- Optional: Combines results of multiple queries
