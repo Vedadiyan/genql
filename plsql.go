@@ -23,6 +23,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/vedadiyan/genql/compare"
 	"github.com/vedadiyan/sqlparser/pkg/sqlparser"
 )
 
@@ -756,78 +757,51 @@ func ComparisonExpr(query *Query, current Map, expr *sqlparser.ComparisonExpr) (
 	if err != nil {
 		return false, err
 	}
-	leftValueRaw, err := ValueOf(query, current, left)
+	leftValue, err := ValueOf(query, current, left)
 	if err != nil {
 		return false, err
 	}
-	leftValue := fmt.Sprintf("%v", leftValueRaw)
 	right, err := Expr(query, current, expr.Right, nil)
 	if err != nil {
 		return false, err
 	}
-	rightValueRaw, err := ValueOf(query, current, right)
+	rightValue, err := ValueOf(query, current, right)
 	if err != nil {
 		return false, err
 	}
-	rightValue := fmt.Sprintf("%v", rightValueRaw)
 
-	_, isLeftStr := leftValueRaw.(string)
-	_, isRightStr := rightValueRaw.(string)
-
-	if !isLeftStr || !isRightStr {
-		equalize := func(a, b *string) {
-			la := len(*a)
-			lb := len(*b)
-			if la == lb {
-				return
-			}
-
-			if lb > la {
-				la, lb = lb, la
-				a, b = b, a
-				_ = a
-				_ = b
-			}
-
-			for i := 0; i < la-lb; i++ {
-				*b = "0" + *b
-			}
-		}
-
-		equalize(&leftValue, &rightValue)
-	}
 	switch expr.Operator {
 	case sqlparser.EqualOp:
 		{
-			return leftValue == rightValue, nil
+			return compare.Compare(leftValue, rightValue) == 0, nil
 		}
 	case sqlparser.NotEqualOp:
 		{
-			return leftValue != rightValue, nil
+			return compare.Compare(leftValue, rightValue) != 0, nil
 		}
 	case sqlparser.GreaterThanOp:
 		{
-			return leftValue > rightValue, nil
+			return compare.Compare(leftValue, rightValue) == 1, nil
 		}
 	case sqlparser.GreaterEqualOp:
 		{
-			return leftValue >= rightValue, nil
+			return compare.Compare(leftValue, rightValue) >= 0, nil
 		}
 	case sqlparser.LessThanOp:
 		{
-			return leftValue < rightValue, nil
+			return compare.Compare(leftValue, rightValue) == -1, nil
 		}
 	case sqlparser.LessEqualOp:
 		{
-			return leftValue <= rightValue, nil
+			return compare.Compare(leftValue, rightValue) <= 0, nil
 		}
 	case sqlparser.LikeOp:
 		{
-			return RegexComparison(leftValue, rightValue)
+			return RegexComparison(fmt.Sprintf("%v", leftValue), fmt.Sprintf("%v", rightValue))
 		}
 	case sqlparser.NotLikeOp:
 		{
-			rs, err := RegexComparison(leftValue, rightValue)
+			rs, err := RegexComparison(fmt.Sprintf("%v", leftValue), fmt.Sprintf("%v", rightValue))
 			if err != nil {
 				return false, err
 			}
