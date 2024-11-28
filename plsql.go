@@ -1654,8 +1654,29 @@ func ExecHaving(query *Query, current Map) (bool, error) {
 	return true, nil
 }
 
+func IsSelectAllAggregate(query *Query) bool {
+	for _, slct := range query.selectDefinition {
+		expr, ok := slct.(*sqlparser.AliasedExpr)
+		if !ok {
+			return false
+		}
+		if _, ok := expr.Expr.(sqlparser.AggrFunc); !ok {
+			return false
+		}
+	}
+	return true
+}
+
 func ExecSelect(query *Query, current []any) ([]any, error) {
 	copy := make([]any, 0)
+	if IsSelectAllAggregate(query) {
+		rs, err := SelectExpr(query, nil, &query.selectDefinition)
+		if err != nil {
+			return nil, err
+		}
+		copy = append(copy, rs)
+		return copy, nil
+	}
 	for _, current := range current {
 		switch current := current.(type) {
 		case []any:

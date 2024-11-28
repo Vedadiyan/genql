@@ -46,6 +46,7 @@ func SumFunc(query *Query, current Map, functionOptions *FunctionOptions, args [
 	if err != nil {
 		return nil, err
 	}
+	allNull := true
 	sum := float64(0)
 	for _, item := range *slice {
 		if item == nil {
@@ -56,6 +57,10 @@ func SumFunc(query *Query, current Map, functionOptions *FunctionOptions, args [
 			return nil, err
 		}
 		sum += number
+		allNull = false
+	}
+	if allNull {
+		return nil, nil
 	}
 	return sum, nil
 }
@@ -76,6 +81,7 @@ func AvgFunc(query *Query, current Map, functionOptions *FunctionOptions, args [
 	if err != nil {
 		return nil, err
 	}
+	allNull := true
 	sum := float64(0)
 	for _, item := range *slice {
 		if item == nil {
@@ -86,6 +92,10 @@ func AvgFunc(query *Query, current Map, functionOptions *FunctionOptions, args [
 			return nil, err
 		}
 		sum += number
+		allNull = false
+	}
+	if allNull {
+		return nil, nil
 	}
 	sum /= float64(len(*slice))
 	return sum, nil
@@ -107,6 +117,7 @@ func MinFunc(query *Query, current Map, functionOptions *FunctionOptions, args [
 	if err != nil {
 		return nil, err
 	}
+	allNull := true
 	min := math.MaxFloat64
 	for _, item := range *slice {
 		if item == nil {
@@ -119,6 +130,10 @@ func MinFunc(query *Query, current Map, functionOptions *FunctionOptions, args [
 		if number < min {
 			min = number
 		}
+		allNull = false
+	}
+	if allNull {
+		return nil, nil
 	}
 	return min, nil
 }
@@ -139,6 +154,7 @@ func MaxFunc(query *Query, current Map, functionOptions *FunctionOptions, args [
 	if err != nil {
 		return nil, err
 	}
+	allNull := true
 	min := -math.MaxFloat64
 	for _, item := range *slice {
 		if item == nil {
@@ -151,6 +167,10 @@ func MaxFunc(query *Query, current Map, functionOptions *FunctionOptions, args [
 		if number > min {
 			min = number
 		}
+		allNull = false
+	}
+	if allNull {
+		return nil, nil
 	}
 	return min, nil
 }

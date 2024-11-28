@@ -14,7 +14,6 @@
 package genql
 
 import (
-	"math"
 	"reflect"
 	"sync"
 	"testing"
@@ -192,7 +191,7 @@ func TestMaxFunc(t *testing.T) {
 			current:         Map{},
 			functionOptions: &FunctionOptions{},
 			args:            []any{[]any{}},
-			want:            -math.MaxFloat64,
+			want:            nil,
 			expectErr:       false,
 		},
 	}
