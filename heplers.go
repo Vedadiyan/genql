@@ -39,6 +39,9 @@ func ValueOf(query *Query, current Map, any any) (any, error) {
 		}
 	case *float64:
 		{
+			if value == nil {
+				return nil, nil
+			}
 			return *value, nil
 		}
 	default:

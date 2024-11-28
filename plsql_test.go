@@ -858,6 +858,119 @@ func TestAggregations(t *testing.T) {
 	}
 }
 
+func TestAggregatesFunctions(t *testing.T) {
+	tests := []struct {
+		name    string
+		query   string
+		data    Map
+		want    []Map
+		wantErr bool
+	}{
+		{
+			name: "Count All",
+			query: `SELECT COUNT(*) as count
+					FROM test
+					ORDER BY count`,
+			data: Map{
+				"test": []Map{
+					{"value": 1},
+					{"value": 2},
+					{"value": 3},
+				},
+			},
+			want: []Map{
+				{"count": 3},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Sum With Nulls",
+			query: `SELECT SUM(value) as total
+					FROM test
+					ORDER BY total`,
+			data: Map{
+				"test": []Map{
+					{"value": 10},
+					{"value": nil},
+					{"value": 5},
+				},
+			},
+			want: []Map{
+				{"total": 15},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Multiple Aggregates",
+			query: `SELECT
+					COUNT(*) as count,
+					SUM(value) as total,
+					AVG(value) as avg,
+					MIN(value) as min,
+					MAX(value) as max
+					FROM test`,
+			data: Map{
+				"test": []Map{
+					{"value": 10},
+					{"value": 20},
+					{"value": 30},
+				},
+			},
+			want: []Map{
+				{"count": 3, "total": 60, "avg": 20, "min": 10, "max": 30},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Empty Table",
+			query: `SELECT COUNT(*) as count, SUM(value) as total
+					FROM test`,
+			data: Map{
+				"test": []Map{},
+			},
+			want: []Map{
+				{"count": 0, "total": nil},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Invalid Function",
+			query: `SELECT INVALID(value) as result
+					FROM test`,
+			data: Map{
+				"test": []Map{
+					{"value": 1},
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q, err := New(tt.data, tt.query, PostgresEscapingDialect())
+			if err != nil {
+				t.Errorf("New() error = %v", err)
+				return
+			}
+			if !tt.wantErr {
+				result, err := q.Exec()
+				if (err != nil) != tt.wantErr {
+					t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				if result == nil {
+					t.Error("Expected non-nil result")
+					return
+				}
+				if fmt.Sprintf("%v", result) != fmt.Sprintf("%v", tt.want) {
+					t.Errorf("Exec() = %v, want %v", result, tt.want)
+				}
+			}
+		})
+	}
+}
 func TestExpressions(t *testing.T) {
 	tests := []struct {
 		name    string
