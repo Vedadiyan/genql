@@ -271,6 +271,52 @@ func TestExecOrderBy(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "Order By Multiple Fields Ascending",
+			query: &Query{
+				orderByDefinition: []struct {
+					Key   string
+					Value bool
+				}{
+					{Key: "age", Value: true},
+					{Key: "name", Value: true},
+				},
+			},
+			input: []any{
+				Map{"age": 30.0, "name": "Bob"},
+				Map{"age": 25.0, "name": "Alice"},
+				Map{"age": 25.0, "name": "Charlie"},
+			},
+			want: []any{
+				Map{"age": 25.0, "name": "Alice"},
+				Map{"age": 25.0, "name": "Charlie"},
+				Map{"age": 30.0, "name": "Bob"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Order By Mixed Directions",
+			query: &Query{
+				orderByDefinition: []struct {
+					Key   string
+					Value bool
+				}{
+					{Key: "age", Value: true},
+					{Key: "salary", Value: false},
+				},
+			},
+			input: []any{
+				Map{"age": 30.0, "salary": 50000.0},
+				Map{"age": 25.0, "salary": 45000.0},
+				Map{"age": 25.0, "salary": 55000.0},
+			},
+			want: []any{
+				Map{"age": 25.0, "salary": 55000.0},
+				Map{"age": 25.0, "salary": 45000.0},
+				Map{"age": 30.0, "salary": 50000.0},
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -286,7 +332,6 @@ func TestExecOrderBy(t *testing.T) {
 		})
 	}
 }
-
 func TestExecWhere(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -606,12 +651,27 @@ func TestAggregations(t *testing.T) {
 	}{
 		{
 			name: "Count with Group By",
-			query: `SELECT category, COUNT(*) as count 
-					FROM test 
+			query: `SELECT category, count(*) as count
+					FROM test
 					GROUP BY category`,
 			data: Map{
 				"test": []Map{
 					{"category": "A", "value": 1},
+					{"category": "A", "value": 2},
+					{"category": "B", "value": 3},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Sum with Having",
+			query: `SELECT category, SUM(value) as count
+					FROM test
+					GROUP BY category
+					HAVING SUM(value) > 2`,
+			data: Map{
+				"test": []Map{
+					{"category": "A", "value": 10},
 					{"category": "A", "value": 2},
 					{"category": "B", "value": 3},
 				},

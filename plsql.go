@@ -23,6 +23,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/vedadiyan/genql/compare"
 	"github.com/vedadiyan/sqlparser/pkg/sqlparser"
 )
 
@@ -62,9 +63,9 @@ type (
 		varsMut                 sync.RWMutex
 	}
 	Query struct {
-		data                Map
-		from                []any
-		processed           []any
+		data Map
+		from []any
+		//processed           []any
 		distinct            bool
 		selectDefinition    SelectDefinition
 		whereDefinition     WhereDefinition
@@ -756,52 +757,51 @@ func ComparisonExpr(query *Query, current Map, expr *sqlparser.ComparisonExpr) (
 	if err != nil {
 		return false, err
 	}
-	leftValueRaw, err := ValueOf(query, current, left)
+	leftValue, err := ValueOf(query, current, left)
 	if err != nil {
 		return false, err
 	}
-	leftValue := fmt.Sprintf("%v", leftValueRaw)
 	right, err := Expr(query, current, expr.Right, nil)
 	if err != nil {
 		return false, err
 	}
-	rightValueRaw, err := ValueOf(query, current, right)
+	rightValue, err := ValueOf(query, current, right)
 	if err != nil {
 		return false, err
 	}
-	rightValue := fmt.Sprintf("%v", rightValueRaw)
+
 	switch expr.Operator {
 	case sqlparser.EqualOp:
 		{
-			return leftValue == rightValue, nil
+			return compare.Compare(leftValue, rightValue) == 0, nil
 		}
 	case sqlparser.NotEqualOp:
 		{
-			return leftValue != rightValue, nil
+			return compare.Compare(leftValue, rightValue) != 0, nil
 		}
 	case sqlparser.GreaterThanOp:
 		{
-			return leftValue > rightValue, nil
+			return compare.Compare(leftValue, rightValue) == 1, nil
 		}
 	case sqlparser.GreaterEqualOp:
 		{
-			return leftValue >= rightValue, nil
+			return compare.Compare(leftValue, rightValue) >= 0, nil
 		}
 	case sqlparser.LessThanOp:
 		{
-			return leftValue < rightValue, nil
+			return compare.Compare(leftValue, rightValue) == -1, nil
 		}
 	case sqlparser.LessEqualOp:
 		{
-			return leftValue <= rightValue, nil
+			return compare.Compare(leftValue, rightValue) <= 0, nil
 		}
 	case sqlparser.LikeOp:
 		{
-			return RegexComparison(leftValue, rightValue)
+			return RegexComparison(fmt.Sprintf("%v", leftValue), fmt.Sprintf("%v", rightValue))
 		}
 	case sqlparser.NotLikeOp:
 		{
-			rs, err := RegexComparison(leftValue, rightValue)
+			rs, err := RegexComparison(fmt.Sprintf("%v", leftValue), fmt.Sprintf("%v", rightValue))
 			if err != nil {
 				return false, err
 			}
@@ -1487,9 +1487,20 @@ func AggrFunExpr(query *Query, current Map, expr sqlparser.AggrFunc) (any, error
 	if !ok {
 		return nil, INVALID_FUNCTION.Extend(fmt.Sprintf("function %s cannot be found", expr.AggrName()))
 	}
+	if len(query.groupDefinition) != 0 {
+		slice, err := AggrFuncArgReader(query, current, expr.GetArgs())
+		if err != nil {
+			return nil, err
+		}
+		result, err := function(query, current, nil, slice)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
 	rs, ok := query.singletonExecutions[name]
 	if !ok {
-		slice, err := AggrFuncArgReader(query, current, expr.GetArgs())
+		slice, err := AggrFuncArgReader(query, map[string]any{"*": query.from}, expr.GetArgs())
 		if err != nil {
 			return nil, err
 		}
@@ -1535,15 +1546,19 @@ func AggrFuncArgReader(query *Query, current Map, exprs sqlparser.Exprs) ([]any,
 			return nil, err
 		}
 		if columnName, ok := rs.(ColumnName); ok {
-			innerSlice := make([]any, 0)
-			for _, item := range query.processed {
-				rs, err := ExecReader(item, string(columnName))
-				if err != nil {
-					return nil, err
+			data := any(current)
+			all, ok := current["*"]
+			if ok {
+				slice, ok := all.([]any)
+				if ok {
+					data = slice
 				}
-				innerSlice = append(innerSlice, rs)
 			}
-			slice = append(slice, innerSlice)
+			rs, err := ExecReader(data, string(columnName))
+			if err != nil {
+				return nil, err
+			}
+			slice = append(slice, rs)
 			continue
 		}
 		value, err := ValueOf(query, current, rs)
@@ -1612,31 +1627,32 @@ func ExecGroupBy(query *Query, current []any) ([]any, error) {
 			current[innerKey] = innerValue
 		}
 		current["*"] = item
-		// rs, err := ExecHaving(query, current)
-		// if err != nil {
-		// 	return nil, err
-		// }
-		// if rs {
-		// }
-		slice = append(slice, current)
+		rs, err := ExecHaving(query, current)
+		if err != nil {
+			return nil, err
+		}
+		if rs {
+			slice = append(slice, current)
+		}
+
 	}
 	return slice, nil
 }
 
-// func ExecHaving(query *Query, current Map) (bool, error) {
-// 	if query.havingDefinition != nil {
-// 		rs, err := Expr(query, current, query.havingDefinition.Expr, nil)
-// 		if err != nil {
-// 			return false, err
-// 		}
-// 		result, ok := rs.(bool)
-// 		if !ok {
-// 			return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to build `HAVING` expression. expected a boolean but found %T", result))
-// 		}
-// 		return result, nil
-// 	}
-// 	return true, nil
-// }
+func ExecHaving(query *Query, current Map) (bool, error) {
+	if query.havingDefinition != nil {
+		rs, err := Expr(query, current, query.havingDefinition.Expr, nil)
+		if err != nil {
+			return false, err
+		}
+		result, ok := rs.(bool)
+		if !ok {
+			return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to build `HAVING` expression. expected a boolean but found %T", result))
+		}
+		return result, nil
+	}
+	return true, nil
+}
 
 func ExecSelect(query *Query, current []any) ([]any, error) {
 	copy := make([]any, 0)
@@ -1745,7 +1761,7 @@ func (query *Query) exec() (result any, err error) {
 	if err != nil {
 		return nil, err
 	}
-	query.processed = rs
+	//query.processed = rs
 	offset := 0
 	if query.offsetDefinition != -1 {
 		offset = query.offsetDefinition

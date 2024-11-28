@@ -14,8 +14,9 @@
 package genql
 
 import (
-	"fmt"
 	"sort"
+
+	"github.com/vedadiyan/genql/compare"
 )
 
 func Sort(slice []any, orderBy OrderByDefinition) (err error) {
@@ -42,7 +43,10 @@ func Compare(slice []any, i int, j int, orderBy OrderByDefinition) (bool, error)
 		return false, nil
 	}
 	key := orderBy[0].Key
-	direction := orderBy[0].Value
+	direction := 1
+	if orderBy[0].Value {
+		direction = -1
+	}
 	first, err := ExecReader(slice[i], key)
 	if err != nil {
 		return false, err
@@ -57,60 +61,9 @@ func Compare(slice []any, i int, j int, orderBy OrderByDefinition) (bool, error)
 	if second == nil {
 		return true, nil
 	}
-	switch first.(type) {
-	case int, int16, int32, int64, int8, float32, float64, byte:
-		{
-			firstValue, ok := first.(float64)
-			if !ok {
-				return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to compare values. expected number but found %T", first))
-			}
-			secondValue, ok := second.(float64)
-			if !ok {
-				return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to compare values. expected number but found %T", first))
-			}
-			if firstValue == secondValue {
-				return Compare(slice, i, j, orderBy[1:])
-			}
-			return firstValue > secondValue != direction, nil
-		}
-	case string:
-		{
-			firstValue, ok := first.(string)
-			if !ok {
-				return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to compare values. expected string but found %T", first))
-			}
-			secondValue, ok := second.(string)
-			if !ok {
-				return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to compare values. expected string but found %T", first))
-			}
-			if firstValue == secondValue {
-				return Compare(slice, i, j, orderBy[1:])
-			}
-			return firstValue > secondValue != direction, nil
-		}
-	case bool:
-		{
-			firstValueRaw, ok := first.(bool)
-			if !ok {
-				return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to compare values. expected boolean but found %T", first))
-			}
-			secondValueRaw, ok := second.(bool)
-			if !ok {
-				return false, INVALID_TYPE.Extend(fmt.Sprintf("failed to compare values. expected boolean but found %T", first))
-			}
-			if first == second {
-				return Compare(slice, i, j, orderBy[1:])
-			}
-			firstValue := 0
-			secondValue := 0
-			if firstValueRaw {
-				firstValue = 1
-			}
-			if secondValueRaw {
-				secondValue = 1
-			}
-			return firstValue > secondValue != direction, nil
-		}
+	res := compare.Compare(first, second)
+	if res == 0 {
+		return Compare(slice, i, j, orderBy[1:])
 	}
-	return false, nil
+	return res == direction, nil
 }
