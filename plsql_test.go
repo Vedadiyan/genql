@@ -14,6 +14,7 @@
 package genql
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -651,9 +652,10 @@ func TestAggregations(t *testing.T) {
 	}{
 		{
 			name: "Count with Group By",
-			query: `SELECT category, count(*) as count
+			query: `SELECT category, COUNT(*) as count
 					FROM test
-					GROUP BY category`,
+					GROUP BY category
+					ORDER BY category`,
 			data: Map{
 				"test": []Map{
 					{"category": "A", "value": 1},
@@ -661,14 +663,19 @@ func TestAggregations(t *testing.T) {
 					{"category": "B", "value": 3},
 				},
 			},
+			want: []Map{
+				{"category": "A", "count": 2},
+				{"category": "B", "count": 1},
+			},
 			wantErr: false,
 		},
 		{
 			name: "Sum with Having",
-			query: `SELECT category, SUM(value) as count
+			query: `SELECT category, SUM(value) as total
 					FROM test
 					GROUP BY category
-					HAVING SUM(value) > 2`,
+					HAVING SUM(value) > 2
+					ORDER BY category`,
 			data: Map{
 				"test": []Map{
 					{"category": "A", "value": 10},
@@ -676,24 +683,175 @@ func TestAggregations(t *testing.T) {
 					{"category": "B", "value": 3},
 				},
 			},
+			want: []Map{
+				{"category": "A", "total": 12},
+				{"category": "B", "total": 3},
+			},
 			wantErr: false,
+		},
+		{
+			name: "Multiple Aggregations",
+			query: `SELECT category,
+					COUNT(*) as count,
+					SUM(value) as total,
+					AVG(value) as avg,
+					MIN(value) as min,
+					MAX(value) as max
+					FROM test
+					GROUP BY category
+					ORDER BY category DESC`,
+			data: Map{
+				"test": []Map{
+					{"category": "A", "value": 10},
+					{"category": "A", "value": 20},
+					{"category": "B", "value": 30},
+				},
+			},
+			want: []Map{
+				{"category": "B", "count": 1, "total": 30, "avg": 30, "min": 30, "max": 30},
+				{"category": "A", "count": 2, "total": 30, "avg": 15, "min": 10, "max": 20},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Group By Multiple Columns",
+			query: `SELECT category, status, COUNT(*) as count
+					FROM test
+					GROUP BY category, status
+					ORDER BY category, status`,
+			data: Map{
+				"test": []Map{
+					{"category": "A", "status": "active", "value": 1},
+					{"category": "A", "status": "active", "value": 2},
+					{"category": "A", "status": "inactive", "value": 3},
+					{"category": "B", "status": "active", "value": 4},
+				},
+			},
+			want: []Map{
+				{"category": "A", "status": "active", "count": 2},
+				{"category": "A", "status": "inactive", "count": 1},
+				{"category": "B", "status": "active", "count": 1},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Having with Multiple Conditions",
+			query: `SELECT category, COUNT(*) as count, SUM(value) as total
+					FROM test
+					GROUP BY category
+					HAVING COUNT(*) > 1 AND SUM(value) > 10
+					ORDER BY total DESC, category`,
+			data: Map{
+				"test": []Map{
+					{"category": "A", "value": 8},
+					{"category": "A", "value": 4},
+					{"category": "B", "value": 15},
+				},
+			},
+			want: []Map{
+				{"category": "A", "count": 2, "total": 12},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Null Value Handling",
+			query: `SELECT category, COUNT(*) as count, SUM(value) as total
+					FROM test
+					GROUP BY category
+					ORDER BY category`,
+			data: Map{
+				"test": []Map{
+					{"category": "A", "value": nil},
+					{"category": "A", "value": 2},
+					{"category": "B", "value": 3},
+				},
+			},
+			want: []Map{
+				{"category": "A", "count": 2, "total": 2},
+				{"category": "B", "count": 1, "total": 3},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Empty Group",
+			query: `SELECT category, COUNT(*) as count
+					FROM test
+					GROUP BY category
+					ORDER BY category`,
+			data: Map{
+				"test": []Map{},
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			name: "Order By Multiple Aggregates",
+			query: `SELECT category, COUNT(*) as count, SUM(value) as total
+					FROM test
+					GROUP BY category
+					ORDER BY count DESC, total ASC`,
+			data: Map{
+				"test": []Map{
+					{"category": "A", "value": 5},
+					{"category": "A", "value": 3},
+					{"category": "B", "value": 10},
+					{"category": "C", "value": 15},
+				},
+			},
+			want: []Map{
+				{"category": "A", "count": 2, "total": 8},
+				{"category": "B", "count": 1, "total": 10},
+				{"category": "C", "count": 1, "total": 15},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Invalid Aggregate Function",
+			query: `SELECT category, INVALID(value) as result
+					FROM test
+					GROUP BY category
+					ORDER BY category`,
+			data: Map{
+				"test": []Map{
+					{"category": "A", "value": 1},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Missing Group By Column",
+			query: `SELECT category, COUNT(*) as count
+					FROM test
+					GROUP BY missing_column
+					ORDER BY missing_column`,
+			data: Map{
+				"test": []Map{
+					{"category": "A", "value": 1},
+				},
+			},
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			q, err := New(tt.data, tt.query, PostgresEscapingDialect())
-			if (err != nil) != tt.wantErr {
-				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
+			if err != nil {
+				t.Errorf("New() error = %v", err)
 				return
 			}
 			if !tt.wantErr {
 				result, err := q.Exec()
+				if (err != nil) != tt.wantErr {
+					t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
 				if err != nil {
 					t.Errorf("Exec() error = %v", err)
+					return
 				}
-				if result == nil {
-					t.Error("Expected non-nil result")
+				if fmt.Sprintf("%v", result) != fmt.Sprintf("%v", tt.want) {
+					t.Errorf("Exec() = %v, want %v", result, tt.want)
 				}
 			}
 		})
