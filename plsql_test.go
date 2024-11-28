@@ -901,6 +901,25 @@ func TestAggregatesFunctions(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "Nested",
+			query: `SELECT (SELECT SUM(value) as total FROM value) AS totals
+					FROM test
+					ORDER BY total`,
+			data: Map{
+				"test": []Map{
+					{"value": []Map{{"value": 1}, {"value": 2}, {"value": 3}}},
+					{"value": []Map{{"value": 4}, {"value": 5}, {"value": 6}}},
+					{"value": []Map{{"value": 7}, {"value": 8}, {"value": 9}}},
+				},
+			},
+			want: []Map{
+				{"totals": []Map{{"total": 6}}},
+				{"totals": []Map{{"total": 15}}},
+				{"totals": []Map{{"total": 24}}},
+			},
+			wantErr: false,
+		},
+		{
 			name: "Multiple Aggregates",
 			query: `SELECT
 					COUNT(*) as count,
