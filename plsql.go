@@ -821,7 +821,10 @@ func ComparisonExpr(query *Query, current Map, expr *sqlparser.ComparisonExpr) (
 				case Map:
 					{
 						for _, value := range value {
-							if leftValue == fmt.Sprintf("%v", value) {
+							if v, ok := value.(*float64); ok {
+								value = *v
+							}
+							if compare.Compare(leftValue, value) == 0 {
 								return true, nil
 							}
 							break
@@ -829,7 +832,10 @@ func ComparisonExpr(query *Query, current Map, expr *sqlparser.ComparisonExpr) (
 					}
 				default:
 					{
-						if leftValue == fmt.Sprintf("%v", value) {
+						if v, ok := value.(*float64); ok {
+							value = *v
+						}
+						if compare.Compare(leftValue, value) == 0 {
 							return true, nil
 						}
 					}
@@ -904,7 +910,7 @@ func BinaryExpr(query *Query, current Map, expr *sqlparser.BinaryExpr) (*float64
 		return nil, err
 	}
 	if leftValueRaw == nil {
-		return nil, EXPECTATION_FAILED.Extend("failed to build `BINARY` expreesion. left side value is nil")
+		return nil, nil
 	}
 	leftValue, err := AsType[float64](leftValueRaw)
 	if err != nil {
@@ -919,7 +925,7 @@ func BinaryExpr(query *Query, current Map, expr *sqlparser.BinaryExpr) (*float64
 		return nil, err
 	}
 	if rightValueRaw == nil {
-		return nil, EXPECTATION_FAILED.Extend("failed to build `BINARY` expreesion. right side value is nil")
+		return nil, nil
 	}
 	rightValue, err := AsType[float64](rightValueRaw)
 	if err != nil {
@@ -973,12 +979,12 @@ func BinaryExpr(query *Query, current Map, expr *sqlparser.BinaryExpr) (*float64
 		}
 	case sqlparser.ShiftLeftOp:
 		{
-			rs := float64(int64(*leftValue) >> int64(*rightValue))
+			rs := float64(int64(*leftValue) << int64(*rightValue))
 			return &rs, nil
 		}
 	case sqlparser.ShiftRightOp:
 		{
-			rs := float64(int64(*leftValue) << int64(*rightValue))
+			rs := float64(int64(*leftValue) >> int64(*rightValue))
 			return &rs, nil
 		}
 	default:
@@ -1061,7 +1067,7 @@ func IsExpr(query *Query, current Map, expr *sqlparser.IsExpr) (bool, error) {
 }
 
 func NotExpr(query *Query, current Map, expr *sqlparser.NotExpr) (bool, error) {
-	rs, err := Expr(query, current, expr, nil)
+	rs, err := Expr(query, current, expr.Expr, nil)
 	if err != nil {
 		return false, err
 	}
@@ -1102,6 +1108,12 @@ func SubStrExpr(query *Query, current Map, expr *sqlparser.SubstrExpr) (string, 
 	if from == nil {
 		return "", EXPECTATION_FAILED.Extend("failed to build `IS` expreesion. the `from` argument is nil")
 	}
+	if colName, ok := from.(ColumnName); ok {
+		from, err = ExecReader(current, string(colName))
+		if err != nil {
+			return "", err
+		}
+	}
 	fromValue, err := AsType[float64](from)
 	if err != nil {
 		return "", err
@@ -1112,6 +1124,12 @@ func SubStrExpr(query *Query, current Map, expr *sqlparser.SubstrExpr) (string, 
 	}
 	if to == nil {
 		return "", EXPECTATION_FAILED.Extend("failed to build `IS` expreesion. the `to` argument is nil")
+	}
+	if colName, ok := to.(ColumnName); ok {
+		to, err = ExecReader(current, string(colName))
+		if err != nil {
+			return "", err
+		}
 	}
 	toValue, err := AsType[float64](to)
 	if err != nil {
@@ -1176,6 +1194,12 @@ func ValueTupleExpr(query *Query, current Map, expr *sqlparser.ValTuple) ([]any,
 		value, err := Expr(query, current, value, nil)
 		if err != nil {
 			return nil, err
+		}
+		if colName, ok := value.(ColumnName); ok {
+			value, err = ExecReader(current, string(colName))
+			if err != nil {
+				return nil, err
+			}
 		}
 		slice = append(slice, value)
 	}

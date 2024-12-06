@@ -15,7 +15,6 @@ package genql
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"strings"
 )
@@ -55,13 +54,20 @@ func AsType[T any](value any) (*T, error) {
 	if value == nil {
 		return nil, nil
 	}
-	test := fmt.Sprintf("%T", *new(T))
-	_ = test
-	returnValue, ok := any(value).(T)
-	if !ok {
-		return new(T), INVALID_CAST
+
+	switch t := value.(type) {
+	case T:
+		{
+			return &t, nil
+		}
+	case *T:
+		{
+			return t, nil
+		}
+
 	}
-	return &returnValue, nil
+
+	return new(T), INVALID_CAST
 }
 
 func AsArray(data any) ([]any, error) {

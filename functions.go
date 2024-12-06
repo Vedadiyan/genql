@@ -604,6 +604,87 @@ func RaiseFunc(query *Query, current Map, functionOptions *FunctionOptions, args
 	return nil, fmt.Errorf("%v", args[0])
 }
 
+//	Report When
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |    bool    |        condition          |
+// |   0   |     any    |          error            |
+// --------------------------------------------------
+func ReportWhenFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(2, args)
+	if err != nil {
+		return nil, err
+	}
+	cond, err := AsType[bool](args[0])
+	if err != nil {
+		return nil, err
+	}
+	if *cond {
+		if query.options.errors != nil {
+			query.options.errors(fmt.Errorf("%v", args[1]))
+		}
+	}
+	return Ommit(true), nil
+}
+
+//	Report
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |     any    |          error            |
+// --------------------------------------------------
+func ReportFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(1, args)
+	if err != nil {
+		return nil, err
+	}
+	if query.options.errors != nil {
+		query.options.errors(fmt.Errorf("%v", args[0]))
+	}
+	return Ommit(true), nil
+}
+
+//	ToLower
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |   string   |          value            |
+// --------------------------------------------------
+func ToLowerFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(1, args)
+	if err != nil {
+		return nil, err
+	}
+	str, err := AsType[string](args[0])
+	if err != nil {
+		return nil, err
+	}
+	return strings.ToLower(*str), nil
+}
+
+//	ToUpper
+//
+// --------------------------------------------------
+// | index |    type    |       description         |
+// |-------|------------|---------------------------|
+// |   0   |   string   |          value            |
+// --------------------------------------------------
+func ToUpperFunc(query *Query, current Map, functionOptions *FunctionOptions, args []any) (any, error) {
+	err := Guard(1, args)
+	if err != nil {
+		return nil, err
+	}
+	str, err := AsType[string](args[0])
+	if err != nil {
+		return nil, err
+	}
+	return strings.ToUpper(*str), nil
+}
+
 //	Hash Function
 //
 // --------------------------------------------------
@@ -848,9 +929,13 @@ func init() {
 	RegisterImmediateFunction("setvar", SetVarFunc)
 	RegisterImmediateFunction("raise_when", RaiseWhenFunc)
 	RegisterImmediateFunction("raise", RaiseFunc)
+	RegisterImmediateFunction("report_when", ReportWhenFunc)
+	RegisterImmediateFunction("report", ReportFunc)
 	RegisterFunction("hash", HashFunc)
 	RegisterFunction("encode", EncodeFunc)
 	RegisterFunction("decode", DecodeFunc)
 	RegisterImmediateFunction("timestamp", TimestampFunc)
 	RegisterFunction("array", ArrayFunc)
+	RegisterImmediateFunction("to_lower", ToLowerFunc)
+	RegisterImmediateFunction("to_upper", ToUpperFunc)
 }
