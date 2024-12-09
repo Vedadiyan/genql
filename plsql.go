@@ -1868,6 +1868,10 @@ func (query *Query) Exec() (result []any, err error) {
 	return []any{rs}, nil
 }
 
+func (query *Query) IsDual() bool {
+	return query.dual
+}
+
 func RegexComparison(left any, pattern string) (bool, error) {
 	regExpr := strings.ReplaceAll(strings.ToLower(pattern), "_", ".")
 	regExpr = strings.ReplaceAll(regExpr, "%", ".*")
