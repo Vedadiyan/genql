@@ -1,5 +1,6 @@
 ![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.20-%23007d9c)
 [![Go report](https://goreportcard.com/badge/github.com/vedadiyan/genql)](https://goreportcard.com/report/github.com/vedadiyan/genql)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FVedadiyan%2Fgenql.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FVedadiyan%2Fgenql?ref=badge_shield)
 
 <p align="center">
   <img src="https://github.com/Vedadiyan/genql/blob/master/.github/logo.png" />
@@ -433,3 +434,6 @@ Copyright © 2023 [Pouya Vedadiyan](https://github.com/vedadiyan).
 
 This project is [Apache-2.0](./LICENSE) licensed.
 
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FVedadiyan%2Fgenql.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FVedadiyan%2Fgenql?ref=badge_large)
