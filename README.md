@@ -1,6 +1,7 @@
 ![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.20-%23007d9c)
 [![Go report](https://goreportcard.com/badge/github.com/vedadiyan/genql)](https://goreportcard.com/report/github.com/vedadiyan/genql)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FVedadiyan%2Fgenql.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FVedadiyan%2Fgenql?ref=badge_shield)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FVedadiyan%2Fgenql.svg?type=shield&issueType=security)](https://app.fossa.com/projects/git%2Bgithub.com%2FVedadiyan%2Fgenql?ref=badge_shield&issueType=security)
 
 <p align="center">
   <img src="https://github.com/Vedadiyan/genql/blob/master/.github/logo.png" />
