@@ -428,49 +428,88 @@ func ExecJoin(query *Query, left []any, right []any, joinExpr sqlparser.Expr, jo
 	if joinType == sqlparser.RightJoinType {
 		left, right = right, left
 	}
-	slice := make([]any, 0)
-	for _, left := range left {
-		left, ok := left.(Map)
-		if !ok {
-			return nil, INVALID_TYPE.Extend(fmt.Sprintf("failed to build `JOIN` expression, expected object but found %T", left))
-		}
-		joined := false
-		for _, right := range right {
-			current := make(Map)
-			for key, value := range left {
-				current[key] = value
-			}
-			right, ok := right.(Map)
-			if !ok {
-				return nil, INVALID_TYPE.Extend(fmt.Sprintf("failed to build `JOIN` expression, expected object but found %T", left))
-			}
-			for key, value := range right {
-				current[key] = value
-			}
-			rs, err := Expr(query, current, joinExpr, nil)
-			if err != nil {
-				return nil, err
-			}
-			rsValue, ok := rs.(bool)
-			if !ok {
-				return nil, INVALID_TYPE.Extend(fmt.Sprintf("failed to build `JOIN` expression, expected boolean but found %T", left))
-			}
-			if rsValue {
-				slice = append(slice, current)
-				joined = true
-			}
-		}
-		if !joined {
-			current := make(Map)
-			for key, value := range left {
-				current[key] = value
-			}
-			if joinType != sqlparser.NormalJoinType {
-				slice = append(slice, current)
-			}
-		}
+
+	// Ensure joinExpr is simple equality: colA = colB
+	cmp, ok := joinExpr.(*sqlparser.ComparisonExpr)
+	if !ok || cmp.Operator != sqlparser.EqualOp {
+		return nil, fmt.Errorf("only equi-joins are supported")
 	}
-	return slice, nil
+
+	leftCol, lok := cmp.Left.(*sqlparser.ColName)
+	rightCol, rok := cmp.Right.(*sqlparser.ColName)
+	if !lok || !rok {
+		return nil, fmt.Errorf("only column-to-column equality joins are supported")
+	}
+
+	lkey := leftCol.Name.String()
+	rkey := rightCol.Name.String()
+
+	// Build right-side hash table
+	hash := make(map[any][]any, len(right))
+	for _, item := range right {
+		row, ok := item.(Map)
+		if !ok {
+			return nil, INVALID_TYPE.Extend(fmt.Sprintf("expected object but found %T", item))
+		}
+		key := selectKey(row, fmt.Sprintf("%s.%s", rightCol.Qualifier.Name, rkey))
+		hash[key] = append(hash[key], row[rightCol.Qualifier.Name.String()])
+	}
+
+	// Probe using left side
+	result := make([]any, 0, len(left))
+	for _, item := range left {
+		lrow, ok := item.(Map)
+		if !ok {
+			return nil, INVALID_TYPE.Extend(fmt.Sprintf("expected object but found %T", item))
+		}
+		key := selectKey(lrow, fmt.Sprintf("%s.%s", leftCol.Qualifier.Name, lkey))
+		matches := hash[key]
+		if len(matches) == 0 {
+			continue
+			if joinType != sqlparser.NormalJoinType {
+				result = append(result, shallowCopy(lrow))
+			}
+		}
+		lrow[rightCol.Qualifier.Name.String()] = matches
+		result = append(result, lrow)
+	}
+
+	return result, nil
+}
+
+func selectKey(mapper Map, k string) any {
+	segments := strings.SplitN(k, ".", 2)
+	if len(segments) == 1 {
+		return mapper[segments[0]]
+	}
+	mapper1, ok := mapper[segments[0]]
+	if !ok {
+		return nil
+	}
+	mapper2, ok := mapper1.(Map)
+	if !ok {
+		return nil
+	}
+	return selectKey(mapper2, segments[1])
+}
+
+func mergeRows(a, b Map) Map {
+	out := make(Map)
+	for k, v := range a {
+		out[k] = v
+	}
+	for k, v := range b {
+		out[k] = v
+	}
+	return out
+}
+
+func shallowCopy(m Map) Map {
+	out := make(Map, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	return out
 }
 
 func BuildLiteral(expr sqlparser.Expr) (sqlparser.ValType, string, error) {
