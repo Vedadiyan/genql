@@ -3,6 +3,7 @@ package genql
 import (
 	"bytes"
 	"fmt"
+	"sync"
 
 	"maps"
 
@@ -10,6 +11,14 @@ import (
 )
 
 type (
+	Join struct {
+		all   []any
+		left  Partition
+		right Partition
+		mut   sync.Mutex
+		query *Query
+		expr  sqlparser.Expr
+	}
 	Locator struct {
 		Map  *Map
 		Rows []int
@@ -17,7 +26,42 @@ type (
 	Partition map[string]Locator
 )
 
-func StraightJoin(query *Query, left, right []any, expr sqlparser.Expr) ([]any, error) {
+func (j *Join) match(l Locator, fn func(l Locator, r Locator)) error {
+	current := make(Map)
+	j.mut.Lock()
+	maps.Copy(current, *l.Map)
+	j.mut.Unlock()
+	for _, r := range j.right {
+		maps.Copy(current, *r.Map)
+		rs, err := Expr(j.query, current, j.expr, nil)
+		if err != nil {
+			return err
+		}
+		rsValue, ok := rs.(bool)
+		if !ok {
+			return INVALID_TYPE.Extend(fmt.Sprintf("failed to build `JOIN` expression, expected boolean but found %T", rs))
+		}
+		if rsValue {
+			fn(l, r)
+		}
+	}
+	return nil
+}
+
+func (j *Join) join(l Locator, r Locator) []any {
+	out := make([]any, 0)
+	for _, li := range l.Rows {
+		for _, ri := range r.Rows {
+			current := make(Map)
+			maps.Copy(current, j.all[li].(Map))
+			maps.Copy(current, j.all[ri].(Map))
+			out = append(out, current)
+		}
+	}
+	return out
+}
+
+func NewJoin(query *Query, left, right []any, expr sqlparser.Expr) (*Join, error) {
 	kl, kr := Key(expr)
 	all := make([]any, 0, len(left)+len(right))
 	all = append(all, left...)
@@ -31,33 +75,52 @@ func StraightJoin(query *Query, left, right []any, expr sqlparser.Expr) ([]any, 
 		return nil, err
 	}
 
+	join := new(Join)
+	join.all = all
+	join.left = leftPartition
+	join.right = rightPartition
+	join.query = query
+	join.expr = expr
+
+	return join, nil
+}
+
+func (j *Join) Run() ([]any, error) {
 	out := make([]any, 0)
-	for _, l := range leftPartition {
-		for _, r := range rightPartition {
-			current := make(Map)
-			maps.Copy(current, *l.Map)
-			maps.Copy(current, *r.Map)
-			rs, err := Expr(query, current, expr, nil)
-			if err != nil {
-				return nil, err
-			}
-			rsValue, ok := rs.(bool)
-			if !ok {
-				return nil, INVALID_TYPE.Extend(fmt.Sprintf("failed to build `JOIN` expression, expected boolean but found %T", left))
-			}
-			if rsValue {
-				for _, li := range l.Rows {
-					for _, ri := range r.Rows {
-						current := make(Map)
-						maps.Copy(current, all[li].(Map))
-						maps.Copy(current, all[ri].(Map))
-						out = append(out, current)
-					}
-				}
-			}
+	for _, l := range j.left {
+		err := j.match(l, func(l, r Locator) {
+			data := j.join(l, r)
+			out = append(out, data...)
+		})
+		if err != nil {
 		}
 	}
+	return out, nil
+}
 
+func (j *Join) RunParallel() ([]any, error) {
+	out := make([]any, 0)
+	var wg sync.WaitGroup
+	var mut sync.Mutex
+	for _, l := range j.left {
+		wg.Add(1)
+		go func(l Locator) {
+			defer wg.Done()
+			err := j.match(l, func(l, r Locator) {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					data := j.join(l, r)
+					mut.Lock()
+					out = append(out, data...)
+					mut.Unlock()
+				}()
+			})
+			if err != nil {
+			}
+		}(l)
+	}
+	wg.Wait()
 	return out, nil
 }
 

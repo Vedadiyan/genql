@@ -429,7 +429,11 @@ func ExecJoin(query *Query, left []any, right []any, joinExpr sqlparser.Expr, jo
 		left, right = right, left
 	}
 
-	return StraightJoin(query, left, right, joinExpr)
+	join, err := NewJoin(query, left, right, joinExpr)
+	if err != nil {
+		return nil, err
+	}
+	return join.RunParallel()
 
 	slice := make([]any, 0)
 	for _, left := range left {
