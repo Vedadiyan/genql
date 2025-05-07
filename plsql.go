@@ -428,6 +428,9 @@ func ExecJoin(query *Query, left []any, right []any, joinExpr sqlparser.Expr, jo
 	if joinType == sqlparser.RightJoinType {
 		left, right = right, left
 	}
+
+	return StraightJoin(query, left, right, joinExpr)
+
 	slice := make([]any, 0)
 	for _, left := range left {
 		left, ok := left.(Map)
