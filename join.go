@@ -19,13 +19,14 @@ type (
 
 func StraightJoin(query *Query, left, right []any, expr sqlparser.Expr) ([]any, error) {
 	kl, kr := Key(expr)
-	_ = kl
-	_ = kr
-	leftPartition, err := Partitionize(left, kl)
+	all := make([]any, 0, len(left)+len(right))
+	all = append(all, left...)
+	all = append(all, right...)
+	leftPartition, err := Partitionize(all, kl)
 	if err != nil {
 		return nil, err
 	}
-	rightPartition, err := Partitionize(right, kr)
+	rightPartition, err := Partitionize(all, kr)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +49,8 @@ func StraightJoin(query *Query, left, right []any, expr sqlparser.Expr) ([]any, 
 				for _, li := range l.Rows {
 					for _, ri := range r.Rows {
 						current := make(Map)
-						maps.Copy(current, left[li].(Map))
-						maps.Copy(current, right[ri].(Map))
+						maps.Copy(current, all[li].(Map))
+						maps.Copy(current, all[ri].(Map))
 						out = append(out, current)
 					}
 				}
@@ -71,12 +72,16 @@ func Partitionize(rows []any, keys []string) (Partition, error) {
 
 	var buffer bytes.Buffer
 
+LOOP:
 	for i, r := range rows {
 		mapper := make(Map)
 		buffer.Reset()
 		for i, segment := range segments {
 			v, err := ExtractKeys(r.(Map), segment...)
 			if err != nil {
+				if err.Error() == "key not found" {
+					continue LOOP
+				}
 				return nil, err
 			}
 			ref := mapper
